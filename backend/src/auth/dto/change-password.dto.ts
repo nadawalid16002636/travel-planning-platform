@@ -4,7 +4,7 @@ import { AUTH_RULES } from '../../common/auth.config.js';
 
 /** ACC-08 */
 export class ChangePasswordDto {
-  @ApiProperty() @IsString() currentPassword: string;
+  @ApiProperty() @IsString() @MaxLength(128) currentPassword: string;
 
   @ApiProperty({ example: 'NewTravel#2026' })
   @IsString()

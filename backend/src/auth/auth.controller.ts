@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Patch, Post, Req, Res } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { AllowPendingPasswordChange, CurrentUser, Public } from '../common/decorators.js';
+import { AllowPendingPasswordChange, ApiErrors, CurrentUser, Public } from '../common/decorators.js';
 import type { JwtUser } from '../common/roles.js';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
@@ -23,6 +23,10 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'ACC-01: register a traveler account' })
+  @ApiErrors(
+    [400, 'Invalid email, password breaks the rules, or terms not accepted'],
+    [409, 'Email is already registered'],
+  )
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
   }
@@ -31,6 +35,11 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'ACC-04, ACC-05: log in (sets the access and refresh cookies)' })
+  @ApiErrors(
+    400,
+    [401, 'Invalid email or password'],
+    [403, 'Account suspended, deactivated, or locked after 5 failed attempts'],
+  )
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = await this.auth.verifyCredentials(dto);
     await this.sessions.start(user.id, req, res);
@@ -50,21 +59,30 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(200)
   @AllowPendingPasswordChange()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'ACC-06: renew the access cookie (also done automatically on any request)' })
+  @ApiErrors([401, 'Session expired or revoked'], [403, 'Account suspended'])
   refresh() {
     return { message: 'Session active' };
   }
 
   @Get('me')
   @AllowPendingPasswordChange()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'ACC-19: current session user (frontend reads the user from here)' })
+  @ApiErrors(401, [403, 'Account suspended'])
   async me(@CurrentUser() user: JwtUser) {
     return this.users.toPublic(await this.users.findById(user.sub));
   }
 
   @Patch('change-password')
   @AllowPendingPasswordChange()
-  @ApiOperation({ summary: 'ACC-08: change password (signs out other sessions)' })
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'ACC-08, ACC-07a: change password (signs out other sessions)' })
+  @ApiErrors(
+    [400, 'Current password is incorrect, or the new password breaks the rules / equals the current one'],
+    401,
+  )
   async changePassword(@CurrentUser() user: JwtUser, @Body() dto: ChangePasswordDto) {
     await this.auth.changePassword(user, dto);
     return { message: 'Password changed' };

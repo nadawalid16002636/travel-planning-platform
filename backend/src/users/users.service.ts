@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import { Role } from '../common/roles.js';
 import { AccountStatus, User, UserDocument } from './schemas/user.schema.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { ReferenceService } from '../reference/reference.service.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -22,6 +23,7 @@ export class UsersService implements OnApplicationBootstrap {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly config: ConfigService,
+    private readonly reference: ReferenceService,
   ) {}
 
   /** Administrator accounts are seeded, never self-registered. */
@@ -83,6 +85,10 @@ export class UsersService implements OnApplicationBootstrap {
   async updateProfile(id: string, dto: UpdateProfileDto): Promise<UserDocument> {
     const user = await this.findById(id);
     const { preferences, ...rest } = dto;
+    // ACC-09: the preferred currency must be one of the supported (seeded) currencies
+    if (preferences?.currency && !(await this.reference.isSupportedCurrency(preferences.currency))) {
+      throw new BadRequestException(`Unsupported currency: ${preferences.currency}`);
+    }
     for (const [key, value] of Object.entries(rest)) {
       if (value !== undefined) user.set(key, value);
     }
@@ -94,8 +100,8 @@ export class UsersService implements OnApplicationBootstrap {
 
   async setPassword(user: UserDocument, plain: string, mustChange = false) {
     user.passwordHash = await this.hashPassword(plain);
-    // tokens issued before this moment become invalid (AuthGuard compares iat)
-    user.passwordChangedAt = new Date(Date.now() - 1000);
+    // callers revoke the affected sessions (SessionsService.revokeAllForUser)
+    user.passwordChangedAt = new Date();
     user.mustChangePassword = mustChange;
     user.failedLoginAttempts = 0;
     user.lockUntil = undefined;
@@ -132,6 +138,7 @@ export class UsersService implements OnApplicationBootstrap {
   async setStatus(id: string, status: AccountStatus, reason?: string) {
     const user = await this.findById(id);
     if (user.role === Role.ADMIN) throw new BadRequestException('Administrator accounts cannot be suspended');
+    if (user.status === status) throw new BadRequestException(`Account is already ${status}`);
     user.status = status;
     user.suspendedReason = status === AccountStatus.SUSPENDED ? reason : undefined;
     await user.save();

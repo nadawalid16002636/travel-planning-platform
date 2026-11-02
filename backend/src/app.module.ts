@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthGuard, RolesGuard } from './common/guards.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
+import { AUTH_RULES } from './common/auth.config.js';
 import { HealthController } from './health.controller.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ReferenceModule } from './reference/reference.module.js';
@@ -39,7 +40,7 @@ import { FxModule } from './fx/fx.module.js';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '1h') },
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', AUTH_RULES.accessTokenTtl) },
       }),
     }),
     ScheduleModule.forRoot(),

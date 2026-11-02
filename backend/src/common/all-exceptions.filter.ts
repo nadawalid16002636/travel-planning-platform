@@ -39,6 +39,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(exception);
     }
 
-    res.status(statusCode).json({ statusCode, message, code, errors, path: req.url, timestamp: new Date().toISOString() });
+    res.status(statusCode).json({ statusCode, message, code, errors, path: req.originalUrl ?? req.url, timestamp: new Date().toISOString() });
   }
 }

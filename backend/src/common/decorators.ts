@@ -1,4 +1,5 @@
-import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { SetMetadata, applyDecorators, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
 import { Role, JwtUser } from './roles.js';
 
 export const IS_PUBLIC = 'isPublic';
@@ -16,6 +17,26 @@ export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
  * (me, change-password, logout) until they set a new password.
  */
 export const AllowPendingPasswordChange = () => SetMetadata(ALLOW_PENDING_PASSWORD, true);
+
+const ERROR_DESCRIPTIONS: Record<number, string> = {
+  400: 'Validation failed or a business rule was broken',
+  401: 'Not logged in, or the session expired',
+  403: 'Not allowed for your role, account suspended, or password change required',
+  404: 'Not found',
+  409: 'Conflict with existing data',
+};
+
+/**
+ * Swagger: documents the error responses of an endpoint, e.g.
+ *   @ApiErrors(400, 401, [404, 'User not found'])
+ */
+export const ApiErrors = (...responses: Array<number | [number, string]>) =>
+  applyDecorators(
+    ...responses.map((r) => {
+      const [status, description] = Array.isArray(r) ? r : [r, ERROR_DESCRIPTIONS[r]];
+      return ApiResponse({ status, description });
+    }),
+  );
 
 /** The logged-in user (undefined on a @Public endpoint without login). */
 export const CurrentUser = createParamDecorator(

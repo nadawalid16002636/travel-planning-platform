@@ -45,3 +45,38 @@ How the output was used:
 Reviewed the session design and the seeder, tested every auth flow and the reference endpoints against
 the shared database, then committed on feature/GEN-12-reference-data.
 ================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude (chat) and Claude Code (VS Code)
+Related Requirement: ACC-01 to ACC-19, GEN-05, GEN-07, GEN-12, GEN-13
+Prompt:
+Audit my part (setup, auth, accounts, admin, audit log, reference data) against the project
+description and the requirements sheet and fix anything missing. Claude Code was also used to run
+git commands (branches, commits, pushes) and to debug the MongoDB Atlas connection (DNS/SRV issue).
+How the output was used:
+Applied the fixes it found (supported-currency validation for ACC-09, full-name search for ACC-14,
+in-app notification on suspension for ACC-15/16, GET /api/airports as in section 8.3), retested the
+endpoints, and kept a list of items that depend on other modules (ACC-12, ACC-15 providers, ACC-17).
+================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude Code
+Related Requirement: ACC-01 to ACC-19, GEN-01, GEN-05, GEN-07, GEN-12, GEN-13
+Prompt:
+Act as a strict TA grading the team lead's part (auth, users, admin, audit, reference, common). For each
+requirement report Met / Partially met / Missing with file:line, check for bugs and security problems,
+fix what is in scope, add Swagger error responses (400/401/403/404) to the auth, users, admin and
+reference controllers, write a dry-run-first cleanup script for @test.local accounts, then verify with
+tsc, lint and build.
+How the output was used:
+Reviewed and kept the fixes: lockout message on the locking attempt (ACC-05), 400 instead of 401 for a
+wrong current password (ACC-08, ACC-12), self-deactivation limited to registered users (ACC-12), admin
+reset limited to users and moderators (ACC-07a), no-op suspend/reactivate rejected (ACC-15/16),
+paginated reference lists with validated query DTOs (GEN-05), strict ObjectId check, login timing
+equalised for unknown emails, .env.* ignored. Retested the flows against the running API with curl.
+Left ACC-12 booking check, ACC-13 provider check, ACC-15 providers and ACC-17 to the booking/provider modules.
+================================================
