@@ -1,12 +1,13 @@
 import { randomBytes } from 'node:crypto';
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, Roles } from '../common/decorators.js';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiErrors, CurrentUser, Roles } from '../common/decorators.js';
 import { Role, type JwtUser } from '../common/roles.js';
 import { paginate, PaginationQueryDto } from '../common/pagination.dto.js';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
 import { SessionsService } from '../auth/sessions.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AccountStatus } from '../users/schemas/user.schema.js';
 import { CreateModeratorDto } from './dto/create-moderator.dto.js';
@@ -14,6 +15,8 @@ import { ListAccountsDto } from './dto/list-accounts.dto.js';
 import { SuspendAccountDto } from './dto/suspend-account.dto.js';
 
 @ApiTags('Admin')
+@ApiCookieAuth()
+@ApiErrors(401, [403, 'Admins only'])
 @Roles(Role.ADMIN)
 @Controller('admin')
 export class AdminController {
@@ -21,10 +24,12 @@ export class AdminController {
     private readonly users: UsersService,
     private readonly audit: AuditService,
     private readonly sessions: SessionsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   @Post('moderators')
   @ApiOperation({ summary: 'ACC-13: create an airline or hotel moderator account' })
+  @ApiErrors(400, [409, 'Email is already registered'])
   async createModerator(@CurrentUser() admin: JwtUser, @Body() dto: CreateModeratorDto) {
     // TODO P2/P3: once Airline and Hotel schemas exist, check that providerId exists
     const { providerType, ...rest } = dto;
@@ -40,21 +45,30 @@ export class AdminController {
   }
 
   @Get('accounts')
-  @ApiOperation({ summary: 'ACC-14: list and search platform accounts' })
+  @ApiOperation({ summary: 'ACC-14, GEN-05: list and search platform accounts (page size 10)' })
+  @ApiErrors(400)
   async accounts(@Query() q: ListAccountsDto) {
     const filter: Record<string, unknown> = {};
     if (q.role) filter.role = q.role;
     if (q.status) filter.status = q.status;
     if (q.search) {
-      const rx = new RegExp(q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filter.$or = [{ email: rx }, { firstName: rx }, { lastName: rx }];
+      const rx = (v: string) => new RegExp(v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const term = q.search.trim();
+      const [first, ...last] = term.split(/\s+/);
+      filter.$or = [
+        { email: rx(term) },
+        { firstName: rx(term) },
+        { lastName: rx(term) },
+        ...(last.length ? [{ firstName: rx(first), lastName: rx(last.join(' ')) }] : []), // "Sara Ahmed"
+      ];
     }
     const { data, total } = await this.users.list(filter, q.page, q.limit);
     return paginate(data, total, q);
   }
 
   @Patch('accounts/:id/suspend')
-  @ApiOperation({ summary: 'ACC-15, ACC-16: suspend a user or moderator (signs them out immediately)' })
+  @ApiOperation({ summary: 'ACC-15, ACC-16, GEN-01, GEN-07: suspend a user or moderator (signs them out immediately)' })
+  @ApiErrors([400, 'Invalid id, administrator account, or already suspended'], [404, 'User not found'])
   async suspend(
     @CurrentUser() admin: JwtUser,
     @Param('id', ParseObjectIdPipe) id: string,
@@ -62,26 +76,31 @@ export class AdminController {
   ) {
     const user = await this.users.setStatus(id, AccountStatus.SUSPENDED, dto.reason);
     await this.sessions.revokeAllForUser(id);
-    // TODO P4: this.notifications.notify(id, 'ACCOUNT_SUSPENDED', { reason: dto.reason })  (GEN-01)
+    await this.notifications.notify(id, 'ACCOUNT_SUSPENDED', { reason: dto.reason }); // GEN-01
     await this.audit.log(admin.sub, 'ACCOUNT_SUSPENDED', 'user', id, { reason: dto.reason });
     return user;
   }
 
   @Patch('accounts/:id/reactivate')
-  @ApiOperation({ summary: 'ACC-15, ACC-16: reactivate a suspended account' })
+  @ApiOperation({ summary: 'ACC-15, ACC-16, GEN-01, GEN-07: reactivate a suspended account' })
+  @ApiErrors([400, 'Invalid id, administrator account, or already active'], [404, 'User not found'])
   async reactivate(@CurrentUser() admin: JwtUser, @Param('id', ParseObjectIdPipe) id: string) {
     const user = await this.users.setStatus(id, AccountStatus.ACTIVE);
     await this.audit.log(admin.sub, 'ACCOUNT_REACTIVATED', 'user', id);
+    await this.notifications.notify(id, 'ACCOUNT_REACTIVATED', {}); // GEN-01
     return user;
   }
 
   @Post('users/:id/reset-password')
   @HttpCode(200)
   @ApiOperation({
-    summary: 'ACC-07a: admin-assisted password reset; returns a one-time temporary password',
+    summary: 'ACC-07a, GEN-07: admin-assisted password reset; returns a one-time temporary password',
   })
+  @ApiErrors([400, 'Invalid id or administrator account'], [404, 'User not found'])
   async resetPassword(@CurrentUser() admin: JwtUser, @Param('id', ParseObjectIdPipe) id: string) {
     const user = await this.users.findById(id);
+    // ACC-07a covers users and moderators only
+    if (user.role === Role.ADMIN) throw new BadRequestException('Administrator passwords cannot be reset here');
     // meets the password rules: letters and digits
     const temporaryPassword = `Tmp-${randomBytes(6).toString('hex')}9`;
     await this.users.setPassword(user, temporaryPassword, true);
@@ -94,7 +113,8 @@ export class AdminController {
   }
 
   @Get('audit-logs')
-  @ApiOperation({ summary: 'GEN-07: view the audit log' })
+  @ApiOperation({ summary: 'GEN-07, GEN-05: view the audit log (page size 10)' })
+  @ApiErrors(400)
   async auditLogs(@Query() q: PaginationQueryDto) {
     const { data, total } = await this.audit.list(q.page, q.limit);
     return paginate(data, total, q);

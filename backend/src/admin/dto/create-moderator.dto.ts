@@ -5,7 +5,7 @@ import { ProviderType } from '../../users/schemas/user.schema.js';
 
 /** ACC-13: a moderator manages exactly one airline or one hotel. */
 export class CreateModeratorDto {
-  @ApiProperty({ example: 'ops@egyptair.example' }) @IsEmail() email: string;
+  @ApiProperty({ example: 'ops@egyptair.example' }) @IsEmail() @MaxLength(254) email: string;
   @ApiProperty() @IsString() @Length(1, 50) firstName: string;
   @ApiProperty() @IsString() @Length(1, 50) lastName: string;
 

@@ -16,7 +16,7 @@ export const AUTH_RULES = {
   // ACC-06: a session with no authenticated request for 30 minutes expires
   sessionIdleMinutes: 30,
   // short-lived access token, renewed from the refresh token while the session is active
-  accessTokenTtl: '15m',
+  accessTokenTtl: '15m' as const,
   // hard upper limit for a refresh token, even if the user stays active
   sessionMaxDays: 7,
 };

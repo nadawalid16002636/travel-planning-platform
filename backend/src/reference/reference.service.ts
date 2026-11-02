@@ -4,6 +4,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Airport, Attraction, City, Country, Currency } from './schemas/reference.schemas.js';
 import { ReferenceSeeder } from './reference.seeder.js';
+import { paginate, PaginationQueryDto } from '../common/pagination.dto.js';
+import { AirportsQueryDto, AttractionsQueryDto, CitiesQueryDto, SearchQueryDto } from './dto/reference-query.dto.js';
 
 const escape = (s: string) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
@@ -35,34 +37,43 @@ export class ReferenceService implements OnApplicationBootstrap {
     }
   }
 
-  countries(search?: string) {
-    return this.countriesModel.find(search ? { name: escape(search) } : {}).sort({ name: 1 }).lean();
+  /** GEN-05: one paginated query shape for every reference list. */
+  private async page<T>(model: Model<T>, q: Record<string, unknown>, sort: Record<string, 1>, p: PaginationQueryDto) {
+    const [data, total] = await Promise.all([
+      model.find(q as any).sort(sort).skip((p.page - 1) * p.limit).limit(p.limit).lean(),
+      model.countDocuments(q as any),
+    ]);
+    return paginate(data, total, p);
   }
 
-  cities(filter: { country?: string; search?: string }) {
+  countries(p: SearchQueryDto) {
+    return this.page(this.countriesModel, p.search ? { name: escape(p.search) } : {}, { name: 1 }, p);
+  }
+
+  cities(p: CitiesQueryDto) {
     const q: Record<string, unknown> = {};
-    if (filter.country) q.countryCode = filter.country.toUpperCase();
-    if (filter.search) q.name = escape(filter.search);
-    return this.citiesModel.find(q).sort({ name: 1 }).lean();
+    if (p.country) q.countryCode = p.country.toUpperCase();
+    if (p.search) q.name = escape(p.search);
+    return this.page(this.citiesModel, q, { name: 1 }, p);
   }
 
-  airports(filter: { city?: string; country?: string; search?: string }) {
+  airports(p: AirportsQueryDto) {
     const q: Record<string, unknown> = {};
-    if (filter.city) q.cityId = filter.city;
-    if (filter.country) q.countryCode = filter.country.toUpperCase();
-    if (filter.search) q.$or = [{ _id: filter.search.toUpperCase() }, { name: escape(filter.search) }];
-    return this.airportsModel.find(q).sort({ _id: 1 }).lean();
+    if (p.city) q.cityId = p.city;
+    if (p.country) q.countryCode = p.country.toUpperCase();
+    if (p.search) q.$or = [{ _id: p.search.toUpperCase() }, { name: escape(p.search) }];
+    return this.page(this.airportsModel, q, { _id: 1 }, p);
   }
 
-  attractions(filter: { city?: string; search?: string }) {
+  attractions(p: AttractionsQueryDto) {
     const q: Record<string, unknown> = {};
-    if (filter.city) q.cityId = filter.city;
-    if (filter.search) q.name = escape(filter.search);
-    return this.attractionsModel.find(q).sort({ name: 1 }).lean();
+    if (p.city) q.cityId = p.city;
+    if (p.search) q.name = escape(p.search);
+    return this.page(this.attractionsModel, q, { name: 1 }, p);
   }
 
-  currencies() {
-    return this.currenciesModel.find().sort({ _id: 1 }).lean();
+  currencies(p: PaginationQueryDto) {
+    return this.page(this.currenciesModel, {}, { _id: 1 }, p);
   }
 
   // ---- lookups for other modules (throw 404 when the id is unknown) ----

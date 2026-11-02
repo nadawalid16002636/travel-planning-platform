@@ -1,9 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Public } from '../common/decorators.js';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiErrors, Public } from '../common/decorators.js';
+import { PaginationQueryDto } from '../common/pagination.dto.js';
 import { ReferenceService } from './reference.service.js';
+import { AirportsQueryDto, AttractionsQueryDto, CitiesQueryDto, SearchQueryDto } from './dto/reference-query.dto.js';
 
-/** GEN-12: read-only reference data for search forms and dropdowns. Public. */
+/** GEN-12: read-only reference data for search forms and dropdowns. Public. Lists are paginated (GEN-05). */
 @ApiTags('Reference data')
 @Public()
 @Controller('reference')
@@ -11,46 +13,44 @@ export class ReferenceController {
   constructor(private readonly reference: ReferenceService) {}
 
   @Get('countries')
-  @ApiQuery({ name: 'search', required: false })
-  @ApiOperation({ summary: 'GEN-12: countries (code, name, currency)' })
-  countries(@Query('search') search?: string) {
-    return this.reference.countries(search);
+  @ApiOperation({ summary: 'GEN-12, GEN-05: countries (code, name, currency)' })
+  @ApiErrors(400)
+  countries(@Query() q: SearchQueryDto) {
+    return this.reference.countries(q);
   }
 
   @Get('cities')
-  @ApiQuery({ name: 'country', required: false, example: 'EG' })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiOperation({ summary: 'GEN-12: cities, optionally by country' })
-  cities(@Query('country') country?: string, @Query('search') search?: string) {
-    return this.reference.cities({ country, search });
+  @ApiOperation({ summary: 'GEN-12, GEN-05: cities, optionally by country' })
+  @ApiErrors(400)
+  cities(@Query() q: CitiesQueryDto) {
+    return this.reference.cities(q);
   }
 
   @Get('airports')
-  @ApiQuery({ name: 'city', required: false, example: 'cairo' })
-  @ApiQuery({ name: 'country', required: false })
-  @ApiQuery({ name: 'search', required: false, description: 'IATA code or name' })
-  @ApiOperation({ summary: 'GEN-12: airports with IATA code and time zone' })
-  airports(@Query('city') city?: string, @Query('country') country?: string, @Query('search') search?: string) {
-    return this.reference.airports({ city, country, search });
+  @ApiOperation({ summary: 'GEN-12, GEN-05: airports with IATA code and time zone (search: IATA code or name)' })
+  @ApiErrors(400)
+  airports(@Query() q: AirportsQueryDto) {
+    return this.reference.airports(q);
   }
 
   @Get('airports/:code')
   @ApiOperation({ summary: 'GEN-12: one airport by IATA code' })
+  @ApiErrors([404, 'Unknown airport'])
   airport(@Param('code') code: string) {
     return this.reference.airport(code);
   }
 
   @Get('attractions')
-  @ApiQuery({ name: 'city', required: false, example: 'cairo' })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiOperation({ summary: 'Attractions, optionally by city' })
-  attractions(@Query('city') city?: string, @Query('search') search?: string) {
-    return this.reference.attractions({ city, search });
+  @ApiOperation({ summary: 'GEN-05: attractions, optionally by city' })
+  @ApiErrors(400)
+  attractions(@Query() q: AttractionsQueryDto) {
+    return this.reference.attractions(q);
   }
 
   @Get('currencies')
-  @ApiOperation({ summary: 'GEN-12: supported currencies' })
-  currencies() {
-    return this.reference.currencies();
+  @ApiOperation({ summary: 'GEN-12, GEN-05: supported currencies' })
+  @ApiErrors(400)
+  currencies(@Query() q: PaginationQueryDto) {
+    return this.reference.currencies(q);
   }
 }
