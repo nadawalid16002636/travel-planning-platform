@@ -26,6 +26,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if ((exception as any)?.code === 11000) {
       statusCode = HttpStatus.CONFLICT; // Mongo duplicate key, e.g. email already used
       message = 'Duplicate value: ' + Object.keys((exception as any).keyValue ?? {}).join(', ');
+    } else if ((exception as any)?.name === 'ValidationError') {
+      statusCode = HttpStatus.BAD_REQUEST; // Mongoose schema validation
+      message = 'Validation failed';
+      errors = Object.values((exception as any).errors ?? {}).map((e: any) => e.message);
     } else if ((exception as any)?.name === 'CastError') {
       statusCode = HttpStatus.BAD_REQUEST;
       message = 'Invalid id';

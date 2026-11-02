@@ -1,10 +1,10 @@
-// Owner: P1. Add your schemas, DTOs, controller and service in this folder.
+// Owner: P1.
 import { Module } from '@nestjs/common';
+import { UsersModule } from '../users/users.module.js';
+import { AdminController } from './admin.controller.js';
 
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [UsersModule],
+  controllers: [AdminController],
 })
 export class AdminModule {}

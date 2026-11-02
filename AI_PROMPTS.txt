@@ -14,3 +14,18 @@ How the output was used:
 Used the plan to assign roles. Reviewed the generated skeleton (guards, decorators,
 exception filter, pagination helper, service stubs) and committed it as the project base.
 ================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: ACC-01, ACC-03 to ACC-09, ACC-07a, ACC-11 to ACC-16, GEN-07
+Prompt:
+Build the auth and accounts module: registration with password rules, login with an httpOnly
+JWT cookie, failed-login lockout, session expiry, logout, change password, profile view/update,
+account deactivation, seeded admin, admin moderator creation, account listing, suspend/reactivate,
+admin-assisted password reset, and the audit log service.
+How the output was used:
+Reviewed the generated schemas, services, controllers and DTOs, checked the limits against the
+requirements sheet (common/auth.config.ts), tested each endpoint in Swagger, then committed.
+================================================
