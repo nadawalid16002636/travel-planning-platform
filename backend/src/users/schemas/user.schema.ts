@@ -45,6 +45,9 @@ export class User {
   @Prop({ select: false }) lockUntil?: Date;
   @Prop() passwordChangedAt?: Date;
   @Prop({ default: false }) mustChangePassword: boolean;
+
+  /** ACC-01: registration requires accepting the terms and privacy policy. */
+  @Prop() termsAcceptedAt?: Date;
 }
 
 export type UserDocument = HydratedDocument<User>;

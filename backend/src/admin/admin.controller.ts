@@ -6,6 +6,7 @@ import { Role, type JwtUser } from '../common/roles.js';
 import { paginate, PaginationQueryDto } from '../common/pagination.dto.js';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe.js';
 import { AuditService } from '../audit/audit.service.js';
+import { SessionsService } from '../auth/sessions.service.js';
 import { UsersService } from '../users/users.service.js';
 import { AccountStatus } from '../users/schemas/user.schema.js';
 import { CreateModeratorDto } from './dto/create-moderator.dto.js';
@@ -19,6 +20,7 @@ export class AdminController {
   constructor(
     private readonly users: UsersService,
     private readonly audit: AuditService,
+    private readonly sessions: SessionsService,
   ) {}
 
   @Post('moderators')
@@ -52,13 +54,15 @@ export class AdminController {
   }
 
   @Patch('accounts/:id/suspend')
-  @ApiOperation({ summary: 'ACC-15, ACC-16: suspend a user or moderator (takes effect immediately)' })
+  @ApiOperation({ summary: 'ACC-15, ACC-16: suspend a user or moderator (signs them out immediately)' })
   async suspend(
     @CurrentUser() admin: JwtUser,
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: SuspendAccountDto,
   ) {
     const user = await this.users.setStatus(id, AccountStatus.SUSPENDED, dto.reason);
+    await this.sessions.revokeAllForUser(id);
+    // TODO P4: this.notifications.notify(id, 'ACCOUNT_SUSPENDED', { reason: dto.reason })  (GEN-01)
     await this.audit.log(admin.sub, 'ACCOUNT_SUSPENDED', 'user', id, { reason: dto.reason });
     return user;
   }
@@ -78,9 +82,10 @@ export class AdminController {
   })
   async resetPassword(@CurrentUser() admin: JwtUser, @Param('id', ParseObjectIdPipe) id: string) {
     const user = await this.users.findById(id);
-    // meets the password rules: upper, lower, digit, special
-    const temporaryPassword = `Tmp#${randomBytes(6).toString('base64url')}9a`;
+    // meets the password rules: letters and digits
+    const temporaryPassword = `Tmp-${randomBytes(6).toString('hex')}9`;
     await this.users.setPassword(user, temporaryPassword, true);
+    await this.sessions.revokeAllForUser(id);
     await this.audit.log(admin.sub, 'PASSWORD_RESET_BY_ADMIN', 'user', id);
     return {
       message: 'Password reset. Give the temporary password to the user; they must change it after logging in.',
@@ -95,5 +100,6 @@ export class AdminController {
     return paginate(data, total, q);
   }
 
+  // ACC-15 provider deactivation: PATCH /admin/airlines/:id and /admin/hotels/:id belong to P2 / P3.
   // ACC-17 GET /admin/bookings: added once flight-bookings (P2) and hotel-bookings (P3) exist.
 }

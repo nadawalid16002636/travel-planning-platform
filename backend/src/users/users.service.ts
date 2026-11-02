@@ -11,9 +11,13 @@ import { UpdateProfileDto } from './dto/update-profile.dto.js';
 
 const BCRYPT_ROUNDS = 12;
 
+/** Returns a reason string if deactivation must be blocked, or null. */
+export type DeactivationCheck = (userId: string) => Promise<string | null>;
+
 @Injectable()
 export class UsersService implements OnApplicationBootstrap {
   private readonly logger = new Logger(UsersService.name);
+  private readonly deactivationChecks: DeactivationCheck[] = [];
 
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
@@ -66,7 +70,7 @@ export class UsersService implements OnApplicationBootstrap {
   findAuthState(id: string) {
     return this.userModel
       .findById(id)
-      .select('role status providerId passwordChangedAt')
+      .select('role status providerId mustChangePassword')
       .lean();
   }
 
@@ -98,7 +102,20 @@ export class UsersService implements OnApplicationBootstrap {
     await user.save();
   }
 
+  /**
+   * ACC-12: booking modules register a check in onModuleInit(), e.g.
+   *   this.users.registerDeactivationCheck(async (userId) =>
+   *     (await this.hasUpcomingConfirmed(userId)) ? 'You have upcoming confirmed flight bookings' : null);
+   */
+  registerDeactivationCheck(check: DeactivationCheck) {
+    this.deactivationChecks.push(check);
+  }
+
   async deactivate(id: string) {
+    for (const check of this.deactivationChecks) {
+      const reason = await check(id);
+      if (reason) throw new BadRequestException(`Account cannot be deactivated: ${reason}`);
+    }
     const user = await this.findById(id);
     user.status = AccountStatus.DEACTIVATED;
     await user.save();
@@ -137,6 +154,7 @@ export class UsersService implements OnApplicationBootstrap {
       providerType: user.providerType,
       providerId: user.providerId?.toString(),
       mustChangePassword: user.mustChangePassword,
+      name: `${user.firstName} ${user.lastName}`.trim(),
       createdAt: (user as any).createdAt,
     };
   }

@@ -5,11 +5,14 @@ export enum Role {
   HOTEL_MOD = 'hotel_moderator',
 }
 
-/** What the JWT carries and what @CurrentUser() returns. */
+/** What @CurrentUser() returns. */
 export interface JwtUser {
   sub: string; // user id
   role: Role;
   providerId?: string; // assigned airline or hotel id, moderators only
+  sid?: string; // session id (ACC-06)
 }
 
+/** ACC-19: both tokens live only in httpOnly cookies. */
 export const AUTH_COOKIE = 'access_token';
+export const REFRESH_COOKIE = 'refresh_token';

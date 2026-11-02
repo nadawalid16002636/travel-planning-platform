@@ -8,9 +8,9 @@ export class PaginationQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   page = 1;
 
-  @ApiPropertyOptional({ default: 20 })
+  @ApiPropertyOptional({ default: 10 })
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
-  limit = 20;
+  limit = 10; // GEN-05: page size 10
 }
 
 export interface Paginated<T> {

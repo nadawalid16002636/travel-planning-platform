@@ -13,6 +13,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors: string[] | undefined;
+    let code: string | undefined;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -23,6 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else {
         message = body?.message ?? exception.message;
       }
+      code = body?.code;
     } else if ((exception as any)?.code === 11000) {
       statusCode = HttpStatus.CONFLICT; // Mongo duplicate key, e.g. email already used
       message = 'Duplicate value: ' + Object.keys((exception as any).keyValue ?? {}).join(', ');
@@ -37,6 +39,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(exception);
     }
 
-    res.status(statusCode).json({ statusCode, message, errors, path: req.url, timestamp: new Date().toISOString() });
+    res.status(statusCode).json({ statusCode, message, code, errors, path: req.url, timestamp: new Date().toISOString() });
   }
 }
