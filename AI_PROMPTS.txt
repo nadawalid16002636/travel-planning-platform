@@ -1,0 +1,16 @@
+AI PROMPT LOG — Travel Planning and Booking Platform (Software Project I, Winter 2026)
+Record every prompt that materially contributed to the project, using the format below.
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: Project setup (all modules)
+Prompt:
+Read the project description and split the work among 7 team members with a step-by-step plan.
+Then set up the NestJS backend skeleton: modules for every feature, global auth/roles guards,
+validation, error format, Swagger, and service stubs for shared services.
+How the output was used:
+Used the plan to assign roles. Reviewed the generated skeleton (guards, decorators,
+exception filter, pagination helper, service stubs) and committed it as the project base.
+================================================
