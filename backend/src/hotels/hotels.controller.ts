@@ -7,9 +7,9 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { HotelsService } from './hotels.service';
-import { CreateHotelDto } from './dto/create-hotel.dto';
-import { UpdateHotelDto } from './dto/update-hotel.dto';
+import { HotelsService } from './hotels.service.js';
+import { CreateHotelDto } from './dto/create-hotel.dto.js';
+import { UpdateHotelDto } from './dto/update-hotel.dto.js';
 
 @Controller('hotels')
 export class HotelsController {

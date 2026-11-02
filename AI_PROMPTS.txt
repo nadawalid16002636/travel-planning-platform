@@ -1,0 +1,82 @@
+AI PROMPT LOG — Travel Planning and Booking Platform (Software Project I, Winter 2026)
+Record every prompt that materially contributed to the project, using the format below.
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: Project setup (all modules)
+Prompt:
+Read the project description and split the work among 7 team members with a step-by-step plan.
+Then set up the NestJS backend skeleton: modules for every feature, global auth/roles guards,
+validation, error format, Swagger, and service stubs for shared services.
+How the output was used:
+Used the plan to assign roles. Reviewed the generated skeleton (guards, decorators,
+exception filter, pagination helper, service stubs) and committed it as the project base.
+================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: ACC-01, ACC-03 to ACC-09, ACC-07a, ACC-11 to ACC-16, GEN-07
+Prompt:
+Build the auth and accounts module: registration with password rules, login with an httpOnly
+JWT cookie, failed-login lockout, session expiry, logout, change password, profile view/update,
+account deactivation, seeded admin, admin moderator creation, account listing, suspend/reactivate,
+admin-assisted password reset, and the audit log service.
+How the output was used:
+Reviewed the generated schemas, services, controllers and DTOs, checked the limits against the
+requirements sheet (common/auth.config.ts), tested each endpoint in Swagger, then committed.
+================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: ACC-01, ACC-05, ACC-06, ACC-07a, ACC-12, ACC-13, ACC-18, ACC-19, GEN-05, GEN-12
+Prompt:
+Compare the auth module with the official requirements sheet and fix the differences (password rule,
+terms consent, access + refresh tokens with 30-minute inactivity expiry, forced password change after a
+temporary password, deactivation blocked by upcoming bookings, page size 10). Then seed the official
+reference datasets (countries, cities, airports, attractions, currencies) keeping their original ids,
+with read-only endpoints for the other modules.
+How the output was used:
+Reviewed the session design and the seeder, tested every auth flow and the reference endpoints against
+the shared database, then committed on feature/GEN-12-reference-data.
+================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude (chat) and Claude Code (VS Code)
+Related Requirement: ACC-01 to ACC-19, GEN-05, GEN-07, GEN-12, GEN-13
+Prompt:
+Audit my part (setup, auth, accounts, admin, audit log, reference data) against the project
+description and the requirements sheet and fix anything missing. Claude Code was also used to run
+git commands (branches, commits, pushes) and to debug the MongoDB Atlas connection (DNS/SRV issue).
+How the output was used:
+Applied the fixes it found (supported-currency validation for ACC-09, full-name search for ACC-14,
+in-app notification on suspension for ACC-15/16, GET /api/airports as in section 8.3), retested the
+endpoints, and kept a list of items that depend on other modules (ACC-12, ACC-15 providers, ACC-17).
+================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude Code
+Related Requirement: ACC-01 to ACC-19, GEN-01, GEN-05, GEN-07, GEN-12, GEN-13
+Prompt:
+Act as a strict TA grading the team lead's part (auth, users, admin, audit, reference, common). For each
+requirement report Met / Partially met / Missing with file:line, check for bugs and security problems,
+fix what is in scope, add Swagger error responses (400/401/403/404) to the auth, users, admin and
+reference controllers, write a dry-run-first cleanup script for @test.local accounts, then verify with
+tsc, lint and build.
+How the output was used:
+Reviewed and kept the fixes: lockout message on the locking attempt (ACC-05), 400 instead of 401 for a
+wrong current password (ACC-08, ACC-12), self-deactivation limited to registered users (ACC-12), admin
+reset limited to users and moderators (ACC-07a), no-op suspend/reactivate rejected (ACC-15/16),
+paginated reference lists with validated query DTOs (GEN-05), strict ObjectId check, login timing
+equalised for unknown emails, .env.* ignored. Retested the flows against the running API with curl.
+Left ACC-12 booking check, ACC-13 provider check, ACC-15 providers and ACC-17 to the booking/provider modules.
+================================================

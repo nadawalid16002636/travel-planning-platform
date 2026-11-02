@@ -6,9 +6,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { isMongoId } from 'class-validator';
 import { Model } from 'mongoose';
-import { CreateHotelDto } from './dto/create-hotel.dto';
-import { UpdateHotelDto } from './dto/update-hotel.dto';
-import { Hotel } from './entities/hotel.entity';
+import { CreateHotelDto } from './dto/create-hotel.dto.js';
+import { UpdateHotelDto } from './dto/update-hotel.dto.js';
+import { Hotel } from './entities/hotel.entity.js';
 
 @Injectable()
 export class HotelsService {

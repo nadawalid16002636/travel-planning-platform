@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { HotelsController } from './hotels.controller';
-import { HotelsService } from './hotels.service';
-import { Hotel } from './entities/hotel.entity';
+import { HotelsController } from './hotels.controller.js';
+import { HotelsService } from './hotels.service.js';
+import { Hotel } from './entities/hotel.entity.js';
 
 describe('HotelsController', () => {
   let controller: HotelsController;
