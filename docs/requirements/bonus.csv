@@ -1,0 +1,12 @@
+ID,Module,Actors,Requirement,Dependencies,Complexity
+ACC-02,Accounts & Admin,System,The system shall send a verification link by email after registration and block booking until the email is verified.,"ACC-01, GEN-01-B",Medium
+ACC-07,Accounts & Admin,Registered User (not logged in),"The system shall allow a user who forgot their password to request a reset link by email; the link expires after 30 minutes, is single-use, is invalidated by a newer request, and the response does not reveal whether the email exists.","ACC-01, GEN-01-B",Medium
+GEN-01-B,Cross-cutting,System,"The system shall also send the GEN-01 notifications (plus moderator invitations) by email via SMTP, using a test inbox in development.",GEN-01,Medium
+FLT-27,Flights,Registered User,"The system shall allow a registered user to change a Confirmed flight booking's date or flight (same route and cabin), paying any fare difference via Stripe or receiving a refund of a lower fare, subject to seat availability.","FLT-26, FLT-22, PAY-01, PAY-03",High
+FLT-28,Flights,Registered User,The system shall allow seat selection.,FLT-11,High
+HTL-26,Hotels,Hotel Moderator,The system shall allow a hotel moderator to reply to a review.,HTL-23,Low
+ITN-27,Itineraries,Registered User,"The system shall allow booked flights and hotels to be linked to itinerary days, feeding the budget.","FLT-23, HTL-17, ITN-05",Medium
+ITN-28,Itineraries,Registered User,The system shall allow a user to export or print an itinerary as PDF.,ITN-03,Medium
+BLG-13,Blog,Registered User,The system shall allow an author to attach an itinerary to a post.,"BLG-01, ITN-03",Low
+BON-01,Accounts & Admin,Admin,The system shall provide an admin analytics dashboard showing bookings and revenue per provider over a selected period.,ACC-17,Medium
+BON-02,Cross-cutting,Registered User,The system shall allow a registered user to save hotels and public itineraries to a favourites list and view it.,"HTL-11, ITN-21",Low

@@ -29,3 +29,19 @@ How the output was used:
 Reviewed the generated schemas, services, controllers and DTOs, checked the limits against the
 requirements sheet (common/auth.config.ts), tested each endpoint in Swagger, then committed.
 ================================================
+
+================================================
+Date: 2026-11-02
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: ACC-01, ACC-05, ACC-06, ACC-07a, ACC-12, ACC-13, ACC-18, ACC-19, GEN-05, GEN-12
+Prompt:
+Compare the auth module with the official requirements sheet and fix the differences (password rule,
+terms consent, access + refresh tokens with 30-minute inactivity expiry, forced password change after a
+temporary password, deactivation blocked by upcoming bookings, page size 10). Then seed the official
+reference datasets (countries, cities, airports, attractions, currencies) keeping their original ids,
+with read-only endpoints for the other modules.
+How the output was used:
+Reviewed the session design and the seeder, tested every auth flow and the reference endpoints against
+the shared database, then committed on feature/GEN-12-reference-data.
+================================================

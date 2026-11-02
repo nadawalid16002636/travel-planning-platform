@@ -8,6 +8,7 @@ import { AuthGuard, RolesGuard } from './common/guards.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { HealthController } from './health.controller.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ReferenceModule } from './reference/reference.module.js';
 import { UsersModule } from './users/users.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { AuditModule } from './audit/audit.module.js';
@@ -42,6 +43,7 @@ import { FxModule } from './fx/fx.module.js';
       }),
     }),
     ScheduleModule.forRoot(),
+    ReferenceModule,
     AuthModule,
     UsersModule,
     AdminModule,

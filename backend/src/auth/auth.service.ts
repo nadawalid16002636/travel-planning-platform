@@ -1,9 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { AUTH_RULES } from '../common/auth.config.js';
 import { JwtUser, Role } from '../common/roles.js';
 import { UsersService } from '../users/users.service.js';
-import { AccountStatus, UserDocument } from '../users/schemas/user.schema.js';
+import { AccountStatus } from '../users/schemas/user.schema.js';
+import { SessionsService } from './sessions.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
@@ -12,17 +12,18 @@ import { ChangePasswordDto } from './dto/change-password.dto.js';
 export class AuthService {
   constructor(
     private readonly users: UsersService,
-    private readonly jwt: JwtService,
+    private readonly sessions: SessionsService,
   ) {}
 
-  /** ACC-01, ACC-03 */
+  /** ACC-01 */
   async register(dto: RegisterDto) {
-    const user = await this.users.create({ ...dto, role: Role.USER });
+    const { acceptTerms, ...data } = dto;
+    const user = await this.users.create({ ...data, role: Role.USER, termsAcceptedAt: new Date() });
     return this.users.toPublic(user);
   }
 
-  /** ACC-04, ACC-05: returns the signed token; the controller puts it in the httpOnly cookie. */
-  async login(dto: LoginDto) {
+  /** ACC-04, ACC-05. Returns the user; the controller starts the session (cookies). */
+  async verifyCredentials(dto: LoginDto) {
     const user = await this.users.findByEmailWithSecrets(dto.email);
     // same message for unknown email and wrong password, so emails cannot be probed
     const invalid = new UnauthorizedException('Invalid email or password');
@@ -30,7 +31,9 @@ export class AuthService {
 
     if (user.lockUntil && user.lockUntil > new Date()) {
       const minutes = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
-      throw new ForbiddenException(`Account locked after too many failed attempts. Try again in ${minutes} minute(s)`);
+      throw new ForbiddenException(
+        `Account locked after ${AUTH_RULES.maxFailedLogins} failed attempts. Try again in ${minutes} minute(s)`,
+      );
     }
 
     if (!(await this.users.checkPassword(dto.password, user.passwordHash))) {
@@ -46,14 +49,13 @@ export class AuthService {
     if (user.status === AccountStatus.SUSPENDED) throw new ForbiddenException('This account is suspended');
     if (user.status === AccountStatus.DEACTIVATED) throw new ForbiddenException('This account is deactivated');
 
-    user.failedLoginAttempts = 0;
+    user.failedLoginAttempts = 0; // a successful login resets the counter
     user.lockUntil = undefined;
     await user.save();
-
-    return { token: this.sign(user), user: this.users.toPublic(user) };
+    return user;
   }
 
-  /** ACC-08: other sessions are invalidated, a fresh token is issued for this one. */
+  /** ACC-08 (also completes ACC-07a/ACC-13 temporary passwords). Other sessions are signed out. */
   async changePassword(current: JwtUser, dto: ChangePasswordDto) {
     const user = await this.users.findByIdWithSecrets(current.sub);
     if (!user) throw new UnauthorizedException();
@@ -64,15 +66,6 @@ export class AuthService {
       throw new BadRequestException('New password must be different from the current password');
     }
     await this.users.setPassword(user, dto.newPassword);
-    return { token: this.sign(user) };
-  }
-
-  private sign(user: UserDocument) {
-    const payload: JwtUser = {
-      sub: user.id,
-      role: user.role,
-      providerId: user.providerId?.toString(),
-    };
-    return this.jwt.sign(payload);
+    await this.sessions.revokeAllForUser(current.sub, current.sid);
   }
 }
