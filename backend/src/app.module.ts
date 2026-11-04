@@ -27,7 +27,6 @@ import { ItinerariesModule } from './itineraries/itineraries.module.js';
 import { PostsModule } from './posts/posts.module.js';
 import { FxModule } from './fx/fx.module.js';
 
-// Only the team lead edits this file. Send P1 your import line if you add a module.
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
