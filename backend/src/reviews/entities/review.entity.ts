@@ -1,0 +1,32 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+
+@Schema({ timestamps: true })
+export class Review {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  userId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Hotel', required: true, index: true })
+  hotelId: Types.ObjectId;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'HotelBooking',
+    required: true,
+    unique: true,
+  })
+  bookingId: Types.ObjectId;
+
+  @Prop({ required: true, min: 1, max: 5 })
+  rating: number;
+
+  @Prop({ required: true, trim: true, minlength: 1, maxlength: 2000 })
+  comment: string;
+
+  @Prop({ trim: true, maxlength: 2000 })
+  reply?: string;
+}
+
+export type ReviewDocument = HydratedDocument<Review>;
+export const ReviewSchema = SchemaFactory.createForClass(Review);
+ReviewSchema.index({ hotelId: 1, createdAt: -1 });
