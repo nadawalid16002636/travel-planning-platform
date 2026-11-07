@@ -1,4 +1,4 @@
-AI PROMPT LOG — Travel Planning and Booking Platform (Software Project I, Winter 2026)
+AI PROMPT LOG â€” Travel Planning and Booking Platform (Software Project I, Winter 2026)
 Record every prompt that materially contributed to the project, using the format below.
 
 ================================================
