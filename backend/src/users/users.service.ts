@@ -30,7 +30,10 @@ export class UsersService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     const email = this.config.get<string>('ADMIN_EMAIL');
     const password = this.config.get<string>('ADMIN_PASSWORD');
-    if (!email || !password) return;
+    if (!email || !password) {
+      this.logger.warn('ADMIN_EMAIL / ADMIN_PASSWORD not set: no administrator seeded (copy the root .env.example)');
+      return;
+    }
     if (await this.userModel.exists({ role: Role.ADMIN })) return;
     await this.userModel.create({
       email,

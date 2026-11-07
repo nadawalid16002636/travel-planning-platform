@@ -139,3 +139,26 @@ routes appear in Swagger, then tested them in Swagger logged in as the admin: th
 type/status/date filters, airline and hotel deactivate/reactivate, the 404 when creating a moderator for
 an unknown airline or hotel, and the matching audit log entries.
 ================================================
+
+================================================
+Date: 2026-11-07
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: ACC-12, ACC-17, ACC-18
+Prompt:
+Act as a strict TA and give a final review of the team lead's part (auth, users, admin, audit,
+reference, common, app.module, main, seed, README, .env.example, .gitignore, AI_PROMPTS, docs) against
+ACC-01 to ACC-19, GEN-01, GEN-05, GEN-07, GEN-12 and GEN-13, with file:line evidence, after merging the
+P2/P3 modules and the admin bookings work. Check that the admin code matches the P2/P3 schemas and look
+for bugs and security issues.
+How the output was used:
+Fixed the three issues in my part that the review found: (1) ACC-12: the deactivation check now counts
+a confirmed flight booking if any leg is still ahead (before, only the first leg was checked, so a round
+trip with an upcoming return flight did not block deactivation); (2) ACC-17: the admin bookings list caps
+page at 1000, because merging flights and hotels loads page x limit rows; (3) ACC-18: backend/.env.example
+now has every key from the root .env.example (admin seed, cookies, JWT, Stripe, FX), and the API logs a
+warning when ADMIN_EMAIL / ADMIN_PASSWORD are missing instead of skipping the admin seed silently.
+Then ran 52 live checks against the running API (auth, users, admin, reference and the P2/P3 integration);
+all passed. Left GEN-01 notifications (P4) and the ACC-12 "Deleted user" display (P3/P5) to their
+owners.
+================================================
