@@ -42,7 +42,7 @@ export class ProvidersService {
   async setActive(type: ProviderType, id: string, active: boolean) {
     const update = type === 'airline' ? { active } : { status: active ? 'active' : 'inactive' };
     const provider = await this.providerModel(type)
-      .findByIdAndUpdate(id, { $set: update }, { new: true })
+      .findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' })
       .lean<Record<string, any>>();
     if (!provider) throw new NotFoundException(`Unknown ${type}: ${id}`);
     return { id: String(provider._id), type, name: provider.name, active: this.isActive(type, provider) };
