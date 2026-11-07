@@ -135,5 +135,7 @@ deactivation check. These read the P2/P3 models through the shared connection, s
 are not imported. The startup crash came from mongoose types (Connection, ClientSession) imported as
 runtime values in P2/P3 files; changed them to type-only imports in a separate commit. Removed the unused
 reference/airports.controller.ts (P2 serves /api/airports). Verified that the app boots and that the new
-routes appear in Swagger.
+routes appear in Swagger, then tested them in Swagger logged in as the admin: the bookings list and its
+type/status/date filters, airline and hotel deactivate/reactivate, the 404 when creating a moderator for
+an unknown airline or hotel, and the matching audit log entries.
 ================================================
