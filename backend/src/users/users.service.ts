@@ -145,6 +145,22 @@ export class UsersService implements OnApplicationBootstrap {
     return this.toPublic(user);
   }
 
+  /** Name + email for lists that show who a record belongs to (e.g. ACC-17). */
+  async basicInfo(ids: string[]) {
+    if (!ids.length) return [];
+    const docs = await this.userModel.find({ _id: { $in: ids } }).select('firstName lastName email').lean();
+    return docs.map((u) => ({
+      id: String(u._id),
+      name: `${u.firstName} ${u.lastName}`.trim(),
+      email: u.email,
+    }));
+  }
+
+  /** Moderators linked to a provider (ACC-15 notifications). */
+  async moderatorIdsFor(providerId: string) {
+    return (await this.userModel.distinct('_id', { providerId })).map(String);
+  }
+
   /** The only shape of a user that ever leaves the API. */
   toPublic(user: UserDocument) {
     return {

@@ -11,6 +11,10 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { UsersService } from '../users/users.service.js';
 import { AccountStatus } from '../users/schemas/user.schema.js';
 import { CreateModeratorDto } from './dto/create-moderator.dto.js';
+import { ListBookingsDto } from './dto/list-bookings.dto.js';
+import { ProviderParamsDto } from './dto/provider-params.dto.js';
+import { ProvidersService } from './providers.service.js';
+import { AdminBookingsService } from './admin-bookings.service.js';
 import { ListAccountsDto } from './dto/list-accounts.dto.js';
 import { SuspendAccountDto } from './dto/suspend-account.dto.js';
 
@@ -25,13 +29,16 @@ export class AdminController {
     private readonly audit: AuditService,
     private readonly sessions: SessionsService,
     private readonly notifications: NotificationsService,
+    private readonly providers: ProvidersService,
+    private readonly bookings: AdminBookingsService,
   ) {}
 
   @Post('moderators')
   @ApiOperation({ summary: 'ACC-13: create an airline or hotel moderator account' })
-  @ApiErrors(400, [409, 'Email is already registered'])
+  @ApiErrors(400, [404, 'Airline or hotel not found'], [409, 'Email is already registered'])
   async createModerator(@CurrentUser() admin: JwtUser, @Body() dto: CreateModeratorDto) {
-    // TODO P2/P3: once Airline and Hotel schemas exist, check that providerId exists
+    // ACC-13: the moderator is linked to exactly one existing airline or hotel
+    await this.providers.findProvider(dto.providerType, dto.providerId);
     const { providerType, ...rest } = dto;
     const user = await this.users.create({
       ...rest,
@@ -120,6 +127,50 @@ export class AdminController {
     return paginate(data, total, q);
   }
 
-  // ACC-15 provider deactivation: PATCH /admin/airlines/:id and /admin/hotels/:id belong to P2 / P3.
-  // ACC-17 GET /admin/bookings: added once flight-bookings (P2) and hotel-bookings (P3) exist.
+  @Patch('providers/:type/:id/deactivate')
+  @ApiOperation({
+    summary: 'ACC-15, GEN-01, GEN-07: deactivate an airline or hotel (hidden from search, cannot be booked)',
+  })
+  @ApiErrors([400, 'Already inactive'], [404, 'Airline or hotel not found'])
+  deactivateProvider(@CurrentUser() admin: JwtUser, @Param() p: ProviderParamsDto) {
+    return this.changeProviderStatus(admin, p, false);
+  }
+
+  @Patch('providers/:type/:id/reactivate')
+  @ApiOperation({ summary: 'ACC-15, GEN-01, GEN-07: reactivate an airline or hotel' })
+  @ApiErrors([400, 'Already active'], [404, 'Airline or hotel not found'])
+  reactivateProvider(@CurrentUser() admin: JwtUser, @Param() p: ProviderParamsDto) {
+    return this.changeProviderStatus(admin, p, true);
+  }
+
+  private async changeProviderStatus(admin: JwtUser, { type, id }: ProviderParamsDto, active: boolean) {
+    const current = await this.providers.findProvider(type, id);
+    if (this.providers.isActive(type, current) === active) {
+      throw new BadRequestException(`This ${type} is already ${active ? 'active' : 'inactive'}`);
+    }
+    const provider = await this.providers.setActive(type, id, active);
+    const action = active ? 'PROVIDER_REACTIVATED' : 'PROVIDER_DEACTIVATED';
+    await this.audit.log(admin.sub, action, type, id, { name: provider.name });
+
+    // ACC-15: affected parties = the provider's moderators + travelers with upcoming confirmed bookings
+    // (existing Confirmed bookings stay valid)
+    const [moderators, customers] = await Promise.all([
+      this.users.moderatorIdsFor(id),
+      this.providers.upcomingCustomerIds(type, id),
+    ]);
+    const payload = { providerType: type, providerId: id, providerName: provider.name };
+    await Promise.all(
+      [...new Set([...moderators, ...customers])].map((userId) => this.notifications.notify(userId, action, payload)),
+    );
+    return { ...provider, notified: new Set([...moderators, ...customers]).size };
+  }
+
+  @Get('bookings')
+  @ApiOperation({
+    summary: 'ACC-17, GEN-05: read-only list of all flight and hotel bookings (filter by type, status, dates)',
+  })
+  @ApiErrors(400)
+  listBookings(@Query() q: ListBookingsDto) {
+    return this.bookings.list(q);
+  }
 }

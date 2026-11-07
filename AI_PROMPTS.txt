@@ -115,3 +115,25 @@ No commit, push, PR, merge, collection deletion or database reset was performed.
 push and merge of P2. Codex reconciled with develop, retained the newer NestJS/ESM
 setup and teammates' auth/hotels, adapted tests to Vitest, wired verified P1 session
 mapping and shared airport schema, and verified build/tests/lint before publication.
+
+================================================
+Date: 2026-11-07
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: ACC-12, ACC-13, ACC-15, ACC-17, GEN-07
+Prompt:
+Finish the admin items that were waiting on the flight and hotel modules: a read-only list of all
+flight and hotel bookings for admins (filter by type, status and date range, paginated), admin
+deactivate/reactivate of an airline or hotel with in-app notifications to its moderators and to
+travelers with upcoming confirmed bookings, a check that a new moderator's airline or hotel exists,
+and the "upcoming confirmed bookings" check that blocks self-deactivation. Then find out why the
+backend would not start after merging P2 and P3.
+How the output was used:
+Added GET /api/admin/bookings, PATCH /api/admin/providers/{type}/{id}/deactivate and /reactivate
+(audit-logged), the provider existence check on POST /api/admin/moderators, and the ACC-12
+deactivation check. These read the P2/P3 models through the shared connection, so their modules
+are not imported. The startup crash came from mongoose types (Connection, ClientSession) imported as
+runtime values in P2/P3 files; changed them to type-only imports in a separate commit. Removed the unused
+reference/airports.controller.ts (P2 serves /api/airports). Verified that the app boots and that the new
+routes appear in Swagger.
+================================================
