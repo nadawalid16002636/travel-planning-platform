@@ -13,6 +13,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let errors: string[] | undefined;
+    let code: string | undefined;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -23,9 +24,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else {
         message = body?.message ?? exception.message;
       }
+      code = body?.code;
     } else if ((exception as any)?.code === 11000) {
       statusCode = HttpStatus.CONFLICT; // Mongo duplicate key, e.g. email already used
       message = 'Duplicate value: ' + Object.keys((exception as any).keyValue ?? {}).join(', ');
+    } else if ((exception as any)?.name === 'ValidationError') {
+      statusCode = HttpStatus.BAD_REQUEST; // Mongoose schema validation
+      message = 'Validation failed';
+      errors = Object.values((exception as any).errors ?? {}).map((e: any) => e.message);
     } else if ((exception as any)?.name === 'CastError') {
       statusCode = HttpStatus.BAD_REQUEST;
       message = 'Invalid id';
@@ -33,6 +39,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(exception);
     }
 
-    res.status(statusCode).json({ statusCode, message, errors, path: req.url, timestamp: new Date().toISOString() });
+    res.status(statusCode).json({ statusCode, message, code, errors, path: req.originalUrl ?? req.url, timestamp: new Date().toISOString() });
   }
 }

@@ -26,7 +26,7 @@ npm run start:dev
 backend/src/
 ├── common/          shared code — only the team lead edits it
 │   ├── roles.ts                 Role enum, JwtUser type
-│   ├── decorators.ts            @Public(), @Roles(), @CurrentUser()
+│   ├── decorators.ts            @Public(), @Roles(), @CurrentUser(), @ApiErrors()
 │   ├── guards.ts                AuthGuard, RolesGuard, assertOwner(), assertProvider()
 │   ├── all-exceptions.filter.ts one error format for the whole API
 │   └── pagination.dto.ts        PaginationQueryDto, paginate()
@@ -37,6 +37,44 @@ backend/src/
 ├── itineraries/ posts/ fx/                    P5
 └── app.module.ts    every module is already imported here
 ```
+
+## Requirements
+
+The official requirements are in `docs/requirements/mandatory.csv` and `bonus.csv`. They are the source of truth
+for every limit and rule. Put the requirement ID in your commit messages and Swagger summaries.
+
+## Sessions (ACC-06, ACC-19)
+
+Login sets two httpOnly cookies: a 15-minute access token and a refresh token. The access token is renewed
+automatically on any request while the session is active. 30 minutes without requests ends the session.
+In Swagger, call `POST /api/auth/login` once; the browser sends the cookies on every later call.
+Accounts with a temporary password get `403 PASSWORD_CHANGE_REQUIRED` until they call `PATCH /api/auth/change-password`.
+After 5 failed logins the account is locked for 15 minutes (ACC-05).
+
+Cookies are `Secure`: browsers accept them on `http://localhost`, but CLI tools like PowerShell's
+`Invoke-WebRequest` do not send them over http. Use Swagger, the browser, or `curl -c jar -b jar`.
+
+## Reference data (GEN-12)
+
+Countries, cities, airports, attractions and currencies are loaded from `backend/seed-data/*.csv` on every
+start (or `npm run seed`). Each record keeps its official id as `_id`:
+
+| Collection | `_id` example | Use it as |
+| --- | --- | --- |
+| countries | `EG` | `countryCode` |
+| cities | `cairo` | `cityId` (hotels, itineraries) |
+| airports | `CAI` | `departureAirport` / `arrivalAirport`; has `timeZone` for GEN-06 |
+| attractions | `att-1` | itinerary activities |
+| currencies | `EGP` | prices, preferences |
+
+Validate ids with the global `ReferenceService` (`await this.reference.airport('CAI')` throws 404 if unknown).
+Public endpoints: `GET /api/reference/{countries,cities,airports,attractions,currencies}` and `GET /api/airports`.
+Lists are paginated like every other list (GEN-05): `?page=1&limit=10` returns `{ data, page, limit, total }`.
+
+## Test data
+
+`npm run cleanup:test` (in `backend/`) lists the accounts whose email ends with `@test.local`, plus their
+sessions. `npm run cleanup:test -- --apply` deletes them. Use `@test.local` emails when you test in Swagger.
 
 ## Rules for coding
 
@@ -50,10 +88,13 @@ find(@Param('id') id: string, @CurrentUser() user: JwtUser) { ... }
 ```
 
 - Private data (bookings, itineraries, drafts): call `assertOwner(doc.userId, user)`.
+- Validate `:id` params with `ParseObjectIdPipe`.
+- Booking modules: register an ACC-12 check with `usersService.registerDeactivationCheck(...)` (see users.service.ts).
 - Moderators: call `assertProvider(airlineOrHotelId, user)`.
 - Validate every body and query with a DTO and `class-validator`. Unknown fields are rejected.
 - List endpoints extend `PaginationQueryDto` and return `paginate(data, total, query)`.
 - Throw Nest exceptions (`NotFoundException`, `ConflictException`, ...); the global filter formats them.
+- Document error responses in Swagger with `@ApiErrors(400, 401, [404, 'Flight not found'])`.
 - Imports use the `.js` extension (the project is ESM): `import { X } from './x.service.js';`
 
 **Shared services** are global, so inject them without importing their module:

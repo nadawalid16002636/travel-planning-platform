@@ -9,8 +9,8 @@ out/
 
 # secrets — never commit these
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # logs and OS files
 *.log

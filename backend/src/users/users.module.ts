@@ -1,10 +1,14 @@
-// Owner: P1. Add your schemas, DTOs, controller and service in this folder.
+// Owner: P1.
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from './schemas/user.schema.js';
+import { UsersService } from './users.service.js';
+import { UsersController } from './users.controller.js';
 
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}
