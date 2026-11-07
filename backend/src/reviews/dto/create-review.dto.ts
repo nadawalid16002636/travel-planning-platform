@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsInt,
-  IsNotEmpty,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -17,9 +17,9 @@ export class CreateReviewDto {
   @ApiProperty({ minimum: 1, maximum: 5 })
   rating: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(2000)
-  @ApiProperty({ maxLength: 2000 })
-  comment: string;
+  @MaxLength(1000)
+  @ApiProperty({ required: false, maxLength: 1000 })
+  comment?: string;
 }

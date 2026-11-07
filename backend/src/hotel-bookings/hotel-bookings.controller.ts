@@ -53,6 +53,15 @@ export class HotelBookingsController {
   ) {
     return this.bookings.cancel(id, user);
   }
+
+  @Get(':id/cancellation-quote')
+  @ApiErrors(400, 401, 403, [404, 'Hotel booking not found'])
+  cancellationQuote(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.bookings.cancellationPreview(id, user);
+  }
 }
 
 @Controller('hotels')

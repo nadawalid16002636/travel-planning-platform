@@ -10,7 +10,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiErrors, CurrentUser, Public, Roles } from '../common/decorators.js';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe.js';
 import { assertProvider } from '../common/guards.js';
@@ -21,6 +21,7 @@ import { CreateHotelDto } from './dto/create-hotel.dto.js';
 import { UpdateHotelDto } from './dto/update-hotel.dto.js';
 import {
   CreateHotelRoomDto,
+  RoomAvailabilityQueryDto,
   UpdateHotelPolicyDto,
   UpdateHotelRoomDto,
   UpdateRoomAvailabilityDto,
@@ -28,11 +29,13 @@ import {
 import { HotelSearchDto } from './dto/hotel-search.dto.js';
 
 @Controller('hotels')
+@ApiTags('Hotels')
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
   @Public()
   @Get('search')
+  @ApiOperation({ summary: 'HTL-11, HTL-12: search, filter and sort hotels' })
   @ApiErrors(400)
   search(@Query() query: HotelSearchDto) {
     return this.hotelsService.search(query);
@@ -40,6 +43,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN)
   @Post()
+  @ApiOperation({ summary: 'HTL-01: create a hotel profile' })
   @ApiErrors(400, 401, 403)
   create(@Body() createHotelDto: CreateHotelDto) {
     return this.hotelsService.create(createHotelDto);
@@ -47,21 +51,27 @@ export class HotelsController {
 
   @Public()
   @Get()
+  @ApiOperation({ summary: 'HTL-11: list active hotels' })
   findAll() {
     return this.hotelsService.findAll();
   }
 
   @Public()
   @Get(':id')
-  @ApiErrors([400, 'Invalid hotel ID'], [404, 'Hotel not found'])
-  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
-    const hotel = await this.hotelsService.findOne(id);
-    const rooms = await this.hotelsService.getRooms(id);
-    return Object.assign(hotel.toObject(), { rooms });
+  @ApiOperation({
+    summary: 'HTL-02, HTL-15, HTL-24: hotel details, rooms and reviews',
+  })
+  @ApiErrors(400, [404, 'Hotel not found'])
+  findOne(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Query() query: HotelSearchDto,
+  ) {
+    return this.hotelsService.findDetail(id, query);
   }
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Patch(':id')
+  @ApiOperation({ summary: 'HTL-01: update a hotel profile' })
   @ApiErrors(400, 401, 403, [404, 'Hotel not found'])
   async update(
     @Param('id', ParseObjectIdPipe) id: string,
@@ -75,6 +85,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Post(':id/rooms')
+  @ApiOperation({ summary: 'HTL-03: add an individually bookable room' })
   @ApiErrors(400, 401, 403, [404, 'Hotel not found'])
   async addRoom(
     @Param('id', ParseObjectIdPipe) id: string,
@@ -88,6 +99,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Patch(':id/rooms/:roomId')
+  @ApiOperation({ summary: 'HTL-05, HTL-06: update a room' })
   @ApiErrors(
     400,
     401,
@@ -108,6 +120,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Delete(':id/rooms/:roomId')
+  @ApiOperation({ summary: 'HTL-06: delete a never-reserved room' })
   @ApiErrors(
     400,
     401,
@@ -127,6 +140,9 @@ export class HotelsController {
 
   @Public()
   @Get(':id/rooms/available')
+  @ApiOperation({
+    summary: 'HTL-15: list available rooms and total stay prices',
+  })
   @ApiQuery({ name: 'checkIn', type: String, format: 'date', required: true })
   @ApiQuery({ name: 'checkOut', type: String, format: 'date', required: true })
   @ApiQuery({ name: 'guests', type: Number, minimum: 1, maximum: 20 })
@@ -151,6 +167,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Post(':id/rooms/:roomId/availability')
+  @ApiOperation({ summary: 'HTL-04, HTL-06: set room availability and blocks' })
   @ApiErrors(
     400,
     401,
@@ -173,6 +190,7 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Patch(':id/rooms/:roomId/availability')
+  @ApiOperation({ summary: 'HTL-04, HTL-05: edit availability and blocks' })
   @ApiErrors(
     400,
     401,
@@ -193,18 +211,21 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Get(':id/availability')
+  @ApiOperation({ summary: 'HTL-08: view room status over a date range' })
   @ApiErrors(401, 403, [404, 'Hotel not found'])
   async getAvailability(
     @Param('id', ParseObjectIdPipe) id: string,
+    @Query() query: RoomAvailabilityQueryDto,
     @CurrentUser() user: JwtUser,
   ) {
     const hotel = await this.hotelsService.findOne(id);
     assertProvider(hotel._id, user);
-    return this.hotelsService.getAvailability(id);
+    return this.hotelsService.getAvailability(id, query);
   }
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Put(':id/policies')
+  @ApiOperation({ summary: 'HTL-09, HTL-10: set hotel times and cancellation tiers' })
   @ApiErrors(400, 401, 403, [404, 'Hotel not found'])
   async updatePolicy(
     @Param('id', ParseObjectIdPipe) id: string,

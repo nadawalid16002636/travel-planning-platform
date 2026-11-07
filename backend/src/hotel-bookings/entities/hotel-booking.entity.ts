@@ -4,6 +4,7 @@ import { HydratedDocument, Types } from 'mongoose';
 export enum HotelBookingStatus {
   PENDING_PAYMENT = 'pending_payment',
   CONFIRMED = 'confirmed',
+  COMPLETED = 'completed',
   CANCELLATION_PENDING = 'cancellation_pending',
   CANCELLED = 'cancelled',
   PAYMENT_FAILED = 'payment_failed',
@@ -18,8 +19,11 @@ export class BookedRoom {
   @Prop({ required: true, trim: true })
   roomName: string;
 
-  @Prop({ required: true, min: 1 })
-  guestCount: number;
+  @Prop({ required: true, min: 0 })
+  adults: number;
+
+  @Prop({ type: [Number], default: [] })
+  childrenAges: number[];
 
   @Prop({ required: true, min: 0 })
   pricePerNight: number;
@@ -36,11 +40,16 @@ export class HotelPolicySnapshot {
   @Prop({ required: true })
   checkOutTime: string;
 
-  @Prop({ required: true, min: 0 })
-  cancellationDeadlineHours: number;
-
-  @Prop({ required: true, min: 0, max: 100 })
-  cancellationRefundPercent: number;
+  @Prop({
+    type: [
+      {
+        daysBeforeCheckIn: { type: Number, required: true, min: 0 },
+        refundPercent: { type: Number, required: true, min: 0, max: 100 },
+      },
+    ],
+    default: [],
+  })
+  cancellationTiers: Array<{ daysBeforeCheckIn: number; refundPercent: number }>;
 }
 
 @Schema({ timestamps: true })

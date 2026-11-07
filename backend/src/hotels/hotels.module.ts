@@ -4,12 +4,14 @@ import { HotelsService } from './hotels.service.js';
 import { HotelsController } from './hotels.controller.js';
 import { Hotel, HotelSchema } from './entities/hotel.entity.js';
 import { HotelRoom, HotelRoomSchema } from './entities/hotel-room.entity.js';
+import { Review, ReviewSchema } from '../reviews/entities/review.entity.js';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Hotel.name, schema: HotelSchema },
       { name: HotelRoom.name, schema: HotelRoomSchema },
+      { name: Review.name, schema: ReviewSchema },
     ]),
   ],
   controllers: [HotelsController],

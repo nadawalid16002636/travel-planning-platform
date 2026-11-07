@@ -8,6 +8,18 @@ export enum HotelStatus {
   INACTIVE = 'inactive',
 }
 
+@Schema({ _id: false })
+export class HotelCancellationTier {
+  @Prop({ required: true, min: 0 })
+  daysBeforeCheckIn: number;
+
+  @Prop({ required: true, min: 0, max: 100 })
+  refundPercent: number;
+}
+
+const HotelCancellationTierSchema =
+  SchemaFactory.createForClass(HotelCancellationTier);
+
 @Schema({ timestamps: true })
 export class Hotel {
   @Prop({ required: true, trim: true })
@@ -31,6 +43,9 @@ export class Hotel {
   @Prop({ type: [String], default: [] })
   amenities: string[];
 
+  @Prop({ type: [String], default: [] })
+  photos: string[];
+
   @Prop({
     type: String,
     enum: HotelStatus,
@@ -43,21 +58,14 @@ export class Hotel {
     type: {
       checkInTime: { type: String, default: '15:00' },
       checkOutTime: { type: String, default: '11:00' },
-      cancellationDeadlineHours: { type: Number, default: 24, min: 0 },
-      cancellationRefundPercent: {
-        type: Number,
-        default: 100,
-        min: 0,
-        max: 100,
-      },
+      cancellationTiers: { type: [HotelCancellationTierSchema], default: [] },
     },
     default: () => ({}),
   })
   policy: {
     checkInTime: string;
     checkOutTime: string;
-    cancellationDeadlineHours: number;
-    cancellationRefundPercent: number;
+    cancellationTiers: HotelCancellationTier[];
   };
 
   @Prop({ default: 0, min: 0 })

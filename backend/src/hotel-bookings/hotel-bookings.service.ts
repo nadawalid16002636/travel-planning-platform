@@ -20,13 +20,14 @@ import {
 } from '../hotels/entities/hotel-room.entity.js';
 import {
   HotelBooking,
+  HotelBookingDocument,
   HotelBookingStatus,
 } from './entities/hotel-booking.entity.js';
 import { CreateHotelBookingDto } from './dto/create-hotel-booking.dto.js';
 import { HotelBookingQueryDto } from './dto/hotel-booking-query.dto.js';
 import { Role } from '../common/roles.js';
 
-const HOLD_MINUTES = 15;
+const HOLD_MINUTES = 10;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function parseDate(value: string): Date {
@@ -52,6 +53,28 @@ function activeReservationFilter(now: Date) {
   };
 }
 
+function roomIsAvailable(
+  room: HotelRoom,
+  checkIn: string,
+  checkOut: string,
+  now: Date,
+): boolean {
+  return (
+    room.availabilityRanges.some(
+      (range) =>
+        range.startDate <= checkIn && range.endDate >= checkOut,
+    ) &&
+    !room.blockedDates.some((day) => day >= checkIn && day < checkOut) &&
+    !room.reservations.some(
+      (reservation) =>
+        reservation.checkIn < parseDate(checkOut) &&
+        reservation.checkOut > parseDate(checkIn) &&
+        (reservation.status === RoomReservationStatus.CONFIRMED ||
+          (reservation.status === RoomReservationStatus.PENDING_PAYMENT &&
+            reservation.expiresAt > now)),
+    )
+  );
+}
 @Injectable()
 export class HotelBookingsService implements OnModuleInit {
   constructor(
@@ -85,6 +108,11 @@ export class HotelBookingsService implements OnModuleInit {
     }
     if (checkOut <= checkIn)
       throw new BadRequestException('checkOut must be after checkIn');
+    if (dto.rooms.reduce((sum, room) => sum + room.adults, 0) < 1) {
+      throw new BadRequestException(
+        'Each reservation must include at least one adult',
+      );
+    }
 
     const hotel = await this.hotelModel
       .findOne({ _id: dto.hotelId, status: { $ne: HotelStatus.INACTIVE } })
@@ -102,7 +130,8 @@ export class HotelBookingsService implements OnModuleInit {
     let bookingRooms: Array<{
       roomId: Types.ObjectId;
       roomName: string;
-      guestCount: number;
+      adults: number;
+      childrenAges: number[];
       pricePerNight: number;
       currency: string;
     }> = [];
@@ -119,29 +148,27 @@ export class HotelBookingsService implements OnModuleInit {
         const now = new Date();
         const rooms: typeof bookingRooms = [];
         for (const selection of dto.rooms) {
+          const guestCount =
+            selection.adults + selection.childrenAges.length;
+          if (guestCount < 1) {
+            throw new BadRequestException(
+              'Each selected room must have at least one guest',
+            );
+          }
           const roomId = new Types.ObjectId(selection.roomId);
           const room = await this.roomModel
             .findOne({
               _id: roomId,
               hotelId: hotel._id,
               isActive: true,
-              maxOccupancy: { $gte: selection.guestCount },
-              blockedDates: {
-                $not: { $elemMatch: { $gte: dto.checkIn, $lt: dto.checkOut } },
-              },
-              reservations: {
-                $not: {
-                  $elemMatch: {
-                    checkIn: { $lt: checkOut },
-                    checkOut: { $gt: checkIn },
-                    ...activeReservationFilter(now),
-                  },
-                },
-              },
             })
             .session(session)
             .exec();
-          if (!room) {
+          if (
+            !room ||
+            room.maxOccupancy < guestCount ||
+            !roomIsAvailable(room, dto.checkIn, dto.checkOut, now)
+          ) {
             throw new ConflictException(
               `Room ${selection.roomId} is unavailable for the selected dates or guest count`,
             );
@@ -159,7 +186,13 @@ export class HotelBookingsService implements OnModuleInit {
                 _id: roomId,
                 hotelId: hotel._id,
                 isActive: true,
-                maxOccupancy: { $gte: selection.guestCount },
+                maxOccupancy: { $gte: guestCount },
+                availabilityRanges: {
+                  $elemMatch: {
+                    startDate: { $lte: dto.checkIn },
+                    endDate: { $gte: dto.checkOut },
+                  },
+                },
                 blockedDates: {
                   $not: {
                     $elemMatch: { $gte: dto.checkIn, $lt: dto.checkOut },
@@ -183,8 +216,11 @@ export class HotelBookingsService implements OnModuleInit {
                     checkOut,
                     status: RoomReservationStatus.PENDING_PAYMENT,
                     expiresAt: holdExpiresAt,
+                    adults: selection.adults,
+                    childrenAges: selection.childrenAges,
                   },
                 },
+                $set: { everReserved: true },
               },
               { new: true, session },
             )
@@ -199,7 +235,8 @@ export class HotelBookingsService implements OnModuleInit {
           rooms.push({
             roomId,
             roomName: room.name,
-            guestCount: selection.guestCount,
+            adults: selection.adults,
+            childrenAges: selection.childrenAges,
             pricePerNight: room.pricePerNight,
             currency: room.currency,
           });
@@ -209,10 +246,7 @@ export class HotelBookingsService implements OnModuleInit {
         const policySnapshot = {
           checkInTime: hotel.policy?.checkInTime ?? '15:00',
           checkOutTime: hotel.policy?.checkOutTime ?? '11:00',
-          cancellationDeadlineHours:
-            hotel.policy?.cancellationDeadlineHours ?? 24,
-          cancellationRefundPercent:
-            hotel.policy?.cancellationRefundPercent ?? 100,
+          cancellationTiers: hotel.policy?.cancellationTiers ?? [],
         };
         await this.bookingModel.create(
           [
@@ -271,21 +305,38 @@ export class HotelBookingsService implements OnModuleInit {
   }
 
   async findAll(user: JwtUser, query: HotelBookingQueryDto) {
-    const filter = { userId: user.sub };
-    const [data, total] = await Promise.all([
-      this.bookingModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip((query.page - 1) * query.limit)
-        .limit(query.limit)
-        .exec(),
-      this.bookingModel.countDocuments(filter).exec(),
+    await this.markCompletedBookings(user.sub);
+    const today = new Date(new Date().toISOString().slice(0, 10));
+    const ownerFilter = { userId: user.sub };
+    const [upcoming, past, cancelled] = await Promise.all([
+      this.paginateBookings(
+        {
+          ...ownerFilter,
+          status: {
+            $in: [
+              HotelBookingStatus.PENDING_PAYMENT,
+              HotelBookingStatus.CONFIRMED,
+            ],
+          },
+          checkIn: { $gte: today },
+        },
+        query,
+      ),
+      this.paginateBookings(
+        { ...ownerFilter, status: HotelBookingStatus.COMPLETED },
+        query,
+      ),
+      this.paginateBookings(
+        { ...ownerFilter, status: HotelBookingStatus.CANCELLED },
+        query,
+      ),
     ]);
-    return { data, page: query.page, limit: query.limit, total };
+    return { upcoming, past, cancelled };
   }
 
   async findOne(id: string, user: JwtUser) {
     this.validateId(id);
+    await this.markCompletedBookings(user.sub);
     const booking = await this.bookingModel.findById(id).exec();
     if (!booking) throw new NotFoundException('Hotel booking not found');
     assertOwner(booking.userId, user);
@@ -308,9 +359,7 @@ export class HotelBookingsService implements OnModuleInit {
     const [data, total] = await Promise.all([
       this.bookingModel
         .find(filter)
-        .select(
-          'hotelId rooms checkIn checkOut nights totalAmount currency status createdAt',
-        )
+        .populate('userId', 'firstName lastName email')
         .sort({ checkIn: 1 })
         .skip((query.page - 1) * query.limit)
         .limit(query.limit)
@@ -337,16 +386,11 @@ export class HotelBookingsService implements OnModuleInit {
       throw new ConflictException('This booking cannot be cancelled');
     }
 
-    const [checkInHour, checkInMinute] = booking.policySnapshot.checkInTime
-      .split(':')
-      .map(Number);
-    const checkInAt = new Date(booking.checkIn);
-    checkInAt.setUTCHours(checkInHour, checkInMinute, 0, 0);
-    const cutoff =
-      checkInAt.getTime() -
-      booking.policySnapshot.cancellationDeadlineHours * 60 * 60 * 1000;
-    if (Date.now() >= cutoff) {
-      throw new ConflictException('The hotel cancellation deadline has passed');
+    const quote = this.cancellationQuote(booking);
+    if (!quote.eligible) {
+      throw new ConflictException(
+        'A confirmed booking can only be cancelled before its check-in date',
+      );
     }
 
     const acquired = await this.bookingModel
@@ -363,11 +407,14 @@ export class HotelBookingsService implements OnModuleInit {
 
     let refundId = booking.refundId;
     try {
-      if (!refundId && booking.policySnapshot.cancellationRefundPercent > 0) {
+      if (!refundId && quote.refundAmount > 0) {
         const refund = await this.payments.refundFor('hotel', {
           _id: booking._id,
           totalAmount: booking.totalAmount,
-          policySnapshot: booking.policySnapshot,
+          policySnapshot: {
+            ...booking.policySnapshot,
+            cancellationRefundPercent: quote.refundPercent,
+          },
         });
         refundId = refund.refundId;
       }
@@ -471,6 +518,8 @@ export class HotelBookingsService implements OnModuleInit {
               $set: {
                 'reservations.$[reservation].status':
                   RoomReservationStatus.CONFIRMED,
+                'reservations.$[reservation].reference':
+                  `HTL-${booking._id.toString().toUpperCase()}`,
               },
             },
             {
@@ -533,6 +582,96 @@ export class HotelBookingsService implements OnModuleInit {
       .select('_id')
       .exec();
     for (const booking of expired) await this.fail(booking._id.toString());
+  }
+
+  async cancellationPreview(id: string, user: JwtUser) {
+    const booking = await this.findOne(id, user);
+    return this.cancellationQuote(booking);
+  }
+
+  private cancellationQuote(booking: HotelBookingDocument) {
+    const today = new Date(new Date().toISOString().slice(0, 10));
+    const checkInDate = new Date(booking.checkIn);
+    const daysRemaining = Math.floor(
+      (checkInDate.getTime() - today.getTime()) / DAY_MS,
+    );
+    const eligible =
+      booking.status === HotelBookingStatus.CONFIRMED && daysRemaining > 0;
+    const tier = eligible
+      ? [...booking.policySnapshot.cancellationTiers]
+          .filter((item) => item.daysBeforeCheckIn <= daysRemaining)
+          .sort(
+            (left, right) =>
+              right.daysBeforeCheckIn - left.daysBeforeCheckIn,
+          )[0]
+      : undefined;
+    const refundPercent = tier?.refundPercent ?? 0;
+    return {
+      bookingId: booking._id,
+      eligible,
+      daysRemaining,
+      refundPercent,
+      refundAmount: Math.floor(
+        (booking.totalAmount * refundPercent) / 100,
+      ),
+      currency: booking.currency,
+    };
+  }
+
+  private async markCompletedBookings(userId: string) {
+    await this.completeEligibleStays({ userId });
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async completePastStays() {
+    await this.completeEligibleStays();
+  }
+
+  private async completeEligibleStays(ownerFilter: { userId?: string } = {}) {
+    const now = new Date();
+    const tomorrow = new Date(
+      new Date(now.toISOString().slice(0, 10)).getTime() + DAY_MS,
+    );
+    const bookings = await this.bookingModel
+      .find({
+        ...ownerFilter,
+        status: HotelBookingStatus.CONFIRMED,
+        checkOut: { $lt: tomorrow },
+      })
+      .select('_id checkOut policySnapshot.checkOutTime')
+      .exec();
+    for (const booking of bookings) {
+      const [hour, minute] = booking.policySnapshot.checkOutTime
+        .split(':')
+        .map(Number);
+      const checkoutAt = new Date(booking.checkOut);
+      checkoutAt.setUTCHours(hour, minute, 0, 0);
+      if (checkoutAt <= now) {
+        await this.bookingModel
+          .updateOne(
+            { _id: booking._id, status: HotelBookingStatus.CONFIRMED },
+            { $set: { status: HotelBookingStatus.COMPLETED } },
+          )
+          .exec();
+      }
+    }
+  }
+
+  private async paginateBookings(
+    filter: Record<string, unknown>,
+    query: HotelBookingQueryDto,
+  ) {
+    const [data, total] = await Promise.all([
+      this.bookingModel
+        .find(filter)
+        .populate('hotelId', 'name city country')
+        .sort({ checkIn: 1 })
+        .skip((query.page - 1) * query.limit)
+        .limit(query.limit)
+        .exec(),
+      this.bookingModel.countDocuments(filter).exec(),
+    ]);
+    return { data, page: query.page, limit: query.limit, total };
   }
 
   private validateId(id: string) {

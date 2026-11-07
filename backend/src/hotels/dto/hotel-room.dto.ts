@@ -13,6 +13,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 export class CreateHotelRoomDto {
@@ -21,6 +22,19 @@ export class CreateHotelRoomDto {
   @MaxLength(100)
   @ApiProperty({ maxLength: 100 })
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(60)
+  @ApiProperty({ maxLength: 60, example: 'Deluxe double' })
+  type: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  @ApiProperty({ minimum: 1, maximum: 20 })
+  bedCount: number;
 
   @Type(() => Number)
   @IsInt()
@@ -58,6 +72,21 @@ export class UpdateHotelRoomDto {
   @MaxLength(100)
   @ApiPropertyOptional({ maxLength: 100 })
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(60)
+  @ApiPropertyOptional({ maxLength: 60 })
+  type?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  @ApiPropertyOptional({ minimum: 1, maximum: 20 })
+  bedCount?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -100,6 +129,14 @@ export class UpdateRoomAvailabilityDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(90)
+  @ValidateNested({ each: true })
+  @Type(() => RoomAvailabilityRangeDto)
+  @ApiPropertyOptional({ type: () => [RoomAvailabilityRangeDto] })
+  availabilityRanges?: RoomAvailabilityRangeDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(90)
   @ArrayUnique()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { each: true })
   @ApiPropertyOptional({ type: [String], format: 'date', maxItems: 90 })
@@ -114,6 +151,33 @@ export class UpdateRoomAvailabilityDto {
   unblockedDates?: string[];
 }
 
+export class RoomAvailabilityRangeDto {
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @ApiProperty({ format: 'date' })
+  startDate: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @ApiProperty({ format: 'date', description: 'Exclusive checkout boundary.' })
+  endDate: string;
+}
+
+export class HotelCancellationTierDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @ApiProperty({ minimum: 0 })
+  daysBeforeCheckIn: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @ApiProperty({ minimum: 0, maximum: 100 })
+  refundPercent: number;
+}
+
 export class UpdateHotelPolicyDto {
   @IsString()
   @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
@@ -125,17 +189,26 @@ export class UpdateHotelPolicyDto {
   @ApiProperty({ example: '11:00' })
   checkOutTime: string;
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(720)
-  @ApiProperty({ minimum: 0, maximum: 720 })
-  cancellationDeadlineHours: number;
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ArrayUnique(
+    (tier: HotelCancellationTierDto) => tier.daysBeforeCheckIn,
+    { message: 'Cancellation tier day thresholds must be unique' },
+  )
+  @ValidateNested({ each: true })
+  @Type(() => HotelCancellationTierDto)
+  @ApiProperty({ type: () => [HotelCancellationTierDto] })
+  cancellationTiers: HotelCancellationTierDto[];
+}
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(100)
-  @ApiProperty({ minimum: 0, maximum: 100 })
-  cancellationRefundPercent: number;
+export class RoomAvailabilityQueryDto {
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @ApiProperty({ format: 'date' })
+  checkIn: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @ApiProperty({ format: 'date', description: 'Exclusive checkout boundary.' })
+  checkOut: string;
 }

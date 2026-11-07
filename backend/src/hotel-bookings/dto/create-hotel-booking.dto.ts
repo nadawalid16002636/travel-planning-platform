@@ -8,6 +8,7 @@ import {
   IsBoolean,
   IsInt,
   IsMongoId,
+  IsOptional,
   Matches,
   Max,
   Min,
@@ -19,12 +20,23 @@ export class HotelBookingRoomDto {
   @ApiProperty()
   roomId: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(20)
-  @ApiProperty({ minimum: 1, maximum: 20 })
-  guestCount: number;
+  @ApiProperty({ minimum: 0, maximum: 20, default: 0 })
+  adults = 0;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(17, { each: true })
+  @ApiProperty({ type: [Number], maxItems: 20 })
+  childrenAges: number[] = [];
 }
 
 export class CreateHotelBookingDto {

@@ -35,15 +35,7 @@ export class ReviewsService {
     const booking = await this.bookingModel.findById(bookingId).exec();
     if (!booking) throw new NotFoundException('Hotel booking not found');
     assertOwner(booking.userId, user);
-    const [checkOutHour, checkOutMinute] = booking.policySnapshot.checkOutTime
-      .split(':')
-      .map(Number);
-    const stayCompletedAt = new Date(booking.checkOut);
-    stayCompletedAt.setUTCHours(checkOutHour, checkOutMinute, 0, 0);
-    if (
-      booking.status !== HotelBookingStatus.CONFIRMED ||
-      stayCompletedAt > new Date()
-    ) {
+    if (booking.status !== HotelBookingStatus.COMPLETED) {
       throw new ConflictException(
         'A review can only be submitted after a completed stay',
       );
@@ -60,7 +52,9 @@ export class ReviewsService {
               hotelId: booking.hotelId,
               bookingId: booking._id,
               rating: dto.rating,
-              comment: dto.comment.trim(),
+              ...(dto.comment?.trim()
+                ? { comment: dto.comment.trim() }
+                : {}),
             },
           ],
           { session },

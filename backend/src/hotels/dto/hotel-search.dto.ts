@@ -34,7 +34,7 @@ export class HotelSearchDto extends PaginationQueryDto {
   @Min(1)
   @Max(5)
   @ApiPropertyOptional({ minimum: 1, maximum: 5 })
-  minStarRating?: number;
+  minRating?: number;
 
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
@@ -55,6 +55,14 @@ export class HotelSearchDto extends PaginationQueryDto {
   guests = 1;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  @ApiPropertyOptional({ default: 1, minimum: 1, maximum: 10 })
+  rooms = 1;
+
+  @IsOptional()
   @IsIn(['name', 'rating', 'price'])
   @ApiPropertyOptional({ enum: ['name', 'rating', 'price'], default: 'name' })
   sortBy: 'name' | 'rating' | 'price' = 'name';
@@ -69,11 +77,21 @@ export class HotelSearchDto extends PaginationQueryDto {
   @IsInt()
   @Min(1)
   @ApiPropertyOptional({ minimum: 1, description: 'Requires currency.' })
+  minPricePerNight?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @ApiPropertyOptional({ minimum: 1, description: 'Requires currency.' })
   maxPricePerNight?: number;
 
   @ValidateIf(
     (query: HotelSearchDto) =>
-      query.maxPricePerNight !== undefined || query.currency !== undefined,
+      query.minPricePerNight !== undefined ||
+      query.maxPricePerNight !== undefined ||
+      query.sortBy === 'price' ||
+      query.currency !== undefined,
   )
   @IsString()
   @Matches(/^[A-Za-z]{3}$/)

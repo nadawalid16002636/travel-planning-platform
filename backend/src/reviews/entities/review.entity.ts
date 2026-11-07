@@ -20,8 +20,8 @@ export class Review {
   @Prop({ required: true, min: 1, max: 5 })
   rating: number;
 
-  @Prop({ required: true, trim: true, minlength: 1, maxlength: 2000 })
-  comment: string;
+  @Prop({ trim: true, maxlength: 1000 })
+  comment?: string;
 
   @Prop({ trim: true, maxlength: 2000 })
   reply?: string;

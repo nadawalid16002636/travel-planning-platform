@@ -1,9 +1,11 @@
 import {
+  ArrayMaxSize,
   IsArray,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   Max,
   Min,
@@ -52,4 +54,11 @@ export class CreateHotelDto {
   @IsString({ each: true })
   @ApiPropertyOptional({ type: [String] })
   amenities?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsUrl({}, { each: true })
+  @ApiPropertyOptional({ type: [String], maxItems: 20 })
+  photos?: string[];
 }

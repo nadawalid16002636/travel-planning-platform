@@ -15,8 +15,9 @@ describe('HotelBookingsService', () => {
       policy: {
         checkInTime: '15:00',
         checkOutTime: '11:00',
-        cancellationDeadlineHours: 48,
-        cancellationRefundPercent: 80,
+        cancellationTiers: [
+          { daysBeforeCheckIn: 1, refundPercent: 80 },
+        ],
       },
     };
     const rooms = [
@@ -25,12 +26,24 @@ describe('HotelBookingsService', () => {
         name: 'Standard',
         currency: 'USD',
         pricePerNight: 1000,
+        maxOccupancy: 4,
+        availabilityRanges: [
+          { startDate: '2000-01-01', endDate: '2999-12-31' },
+        ],
+        blockedDates: [],
+        reservations: [],
       },
       {
         _id: secondRoomId,
         name: 'Deluxe',
         currency: 'USD',
         pricePerNight: 1500,
+        maxOccupancy: 4,
+        availabilityRanges: [
+          { startDate: '2000-01-01', endDate: '2999-12-31' },
+        ],
+        blockedDates: [],
+        reservations: [],
       },
     ];
     let createdBooking: Record<string, unknown> | undefined;
@@ -94,8 +107,16 @@ describe('HotelBookingsService', () => {
         checkOut,
         acceptPolicies: true,
         rooms: [
-          { roomId: firstRoomId.toString(), guestCount: 2 },
-          { roomId: secondRoomId.toString(), guestCount: 3 },
+          {
+            roomId: firstRoomId.toString(),
+            adults: 2,
+            childrenAges: [],
+          },
+          {
+            roomId: secondRoomId.toString(),
+            adults: 3,
+            childrenAges: [],
+          },
         ],
       },
     );
@@ -132,7 +153,13 @@ describe('HotelBookingsService', () => {
           checkIn: '2030-01-01',
           checkOut: '2030-01-02',
           acceptPolicies: false,
-          rooms: [{ roomId: new Types.ObjectId().toString(), guestCount: 1 }],
+          rooms: [
+            {
+              roomId: new Types.ObjectId().toString(),
+              adults: 1,
+              childrenAges: [],
+            },
+          ],
         },
       ),
     ).rejects.toThrow('You must accept the hotel policies');
