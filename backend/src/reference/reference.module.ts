@@ -6,7 +6,6 @@ import {
   Country, CountrySchema, Currency, CurrencySchema,
 } from './schemas/reference.schemas.js';
 import { ReferenceController } from './reference.controller.js';
-import { AirportsController } from './airports.controller.js';
 import { ReferenceService } from './reference.service.js';
 import { ReferenceSeeder } from './reference.seeder.js';
 
@@ -21,7 +20,7 @@ import { ReferenceSeeder } from './reference.seeder.js';
       { name: Currency.name, schema: CurrencySchema },
     ]),
   ],
-  controllers: [ReferenceController, AirportsController],
+  controllers: [ReferenceController],
   providers: [ReferenceService, ReferenceSeeder],
   exports: [ReferenceService, ReferenceSeeder],
 })

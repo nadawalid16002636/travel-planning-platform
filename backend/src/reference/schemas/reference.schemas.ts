@@ -24,6 +24,10 @@ export const CitySchema = SchemaFactory.createForClass(City);
 
 @Schema({ collection: 'airports', versionKey: false })
 export class Airport {
+  @Prop() officialId?: string;
+  @Prop() code?: string;
+  @Prop() city?: string;
+  @Prop() country?: string;
   @Prop({ type: String }) _id: string; // IATA code, e.g. 'CAI'
   @Prop({ required: true }) name: string;
   @Prop({ required: true, index: true }) cityId: string;

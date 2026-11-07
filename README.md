@@ -131,3 +131,7 @@ git push -u origin feature/FLT-11-flight-search
 - Never commit `.env`.
 - Only touch your own module folders; changes to `common/` or `app.module.ts` go through the team lead.
 - Log the AI prompts you used in `AI_PROMPTS.txt` with the requirement ID.
+
+## P2 airlines, flights and bookings
+
+See [integration contracts](backend/P2_INTEGRATION.md) and [review handoff](backend/P2_REVIEW.md).
