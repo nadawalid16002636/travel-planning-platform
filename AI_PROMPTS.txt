@@ -1,0 +1,30 @@
+================================================
+Date: 2026-11-07 (work began 2026-11-02)
+Student role: P2 - Airlines, Flights, Flight Bookings
+AI tool: Codex
+Related requirements: FLT-01, FLT-02, FLT-03, FLT-04, FLT-05, FLT-06,
+FLT-08, FLT-09, FLT-11, FLT-12, FLT-15, FLT-17, FLT-19, FLT-21,
+FLT-22, FLT-23, FLT-25, FLT-26, FLT-29, FLT-30; integration dependencies
+ACC-11, ACC-13, PAY-01, PAY-02, PAY-03, GEN-01, GEN-06, GEN-11.
+Prompt summary:
+Implement the assigned P2 backend in the existing NestJS/MongoDB/TypeScript
+workspace, preserving teammate code and shared records; inspect official
+requirements, complete airline policies, airports, flights, searches, atomic
+seat holds, owned bookings, payment-side transitions, cancellations and tickets;
+protect private endpoints, document dependencies and run isolated tests.
+Additional user material:
+Four local Mock Data workbooks and desc.pdf were supplied. The PDF linked the
+official requirements workbook, which was retrieved and used to replace initial
+provisional designs with exact passenger, baggage, cancellation and hold rules.
+How the AI output was reviewed and used:
+Codex inspected existing code and Git changes, implemented the P2 modules,
+reviewed the requirement text, and exercised the implementation with unit,
+HTTP and real ephemeral MongoDB replica-set tests. A generated PDF ticket was
+rendered and visually inspected. No teammate-owned authentication, Stripe,
+notification or upload service was fabricated. Shared Atlas airport import
+attempts failed and remain documented; isolated official seed imports passed.
+The student and team leader still need to review, understand and approve the
+implementation and integration contracts before submission/merging. Automated
+checks do not represent student review or completed P1/P4 integration.
+No commit, push, PR, merge, collection deletion or database reset was performed.
+================================================
