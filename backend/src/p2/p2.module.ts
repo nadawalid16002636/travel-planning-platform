@@ -1,23 +1,23 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Airline, AirlineSchema } from '../airlines/schemas/airline.schema';
-import { P2AccessModule } from './access';
-import { AirportsService } from './airports.service';
-import { BookingsService } from './bookings.service';
+import { Airline, AirlineSchema } from '../airlines/schemas/airline.schema.js';
+import { P2AccessModule } from './access.js';
+import { AirportsService } from './airports.service.js';
+import { BookingsService } from './bookings.service.js';
 import {
   AirportsController,
   BookingsController,
   FlightsController,
-} from './controllers';
-import { FlightsService } from './flights.service';
-import { P2Rules } from './rules';
+} from './controllers.js';
+import { FlightsService } from './flights.service.js';
+import { P2Rules } from './rules.js';
 import {
   AirportSchema,
   BookingSchema,
   FlightSchema,
   HoldSchema,
   P2EventSchema,
-} from './schemas';
+} from './schemas.js';
 
 @Module({
   imports: [

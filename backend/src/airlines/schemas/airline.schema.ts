@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { BaggagePolicy, BaggagePolicySchema } from './baggage-policy.schema';
+import { BaggagePolicy, BaggagePolicySchema } from './baggage-policy.schema.js';
 import {
   CancellationPolicy,
   CancellationPolicySchema,
-} from './cancellation-policy.schema';
+} from './cancellation-policy.schema.js';
 
 export type AirlineDocument = HydratedDocument<Airline>;
 

@@ -1,4 +1,4 @@
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import {
   BadRequestException,
   ConflictException,
@@ -12,18 +12,18 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Connection, Model } from 'mongoose';
 import { randomBytes } from 'crypto';
-import { P2Access, P2Principal, objectId } from './access';
+import { P2Access, P2Principal, objectId } from './access.js';
 import {
   BookingQueryDto,
   CreateBookingDto,
   HoldDto,
   PageDto,
   UpdateFlightDto,
-} from './dto';
-import { airportInstant, localDate, FlightsService } from './flights.service';
-import { P2Rules } from './rules';
+} from './dto.js';
+import { airportInstant, localDate, FlightsService } from './flights.service.js';
+import { P2Rules } from './rules.js';
 import { StreamableFile } from '@nestjs/common';
-import { airportLocalTime } from './flights.service';
+import { airportLocalTime } from './flights.service.js';
 
 /** Only P4's server-side verified webhook handler may call applyVerifiedPayment. No HTTP success endpoint. */
 export interface VerifiedFlightPayment {
@@ -174,7 +174,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
         .find({ 'legs.flightId': f._id, state: 'active' })
         .session(session);
       for (const b of [...affected, ...holds]) {
-        const legs = b.legs.map((l) =>
+        const legs = b.legs.map((l: any) =>
           String(l.flightId) === id
             ? { ...l.toObject(), departureAt, arrivalAt }
             : l.toObject(),
@@ -267,7 +267,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
             previous.arrivalAt >= f.departureAt)
         )
           throw new BadRequestException('Invalid round-trip legs');
-        const c = f.cabins.find((c) => c.cabinClass === selected.cabinClass);
+        const c = f.cabins.find((c: any) => c.cabinClass === selected.cabinClass);
         if (!c) throw new BadRequestException('Cabin unavailable');
         if (first && first.currency !== c.currency)
           throw new BadRequestException(
@@ -365,7 +365,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
         const baggage = leg.policySnapshot?.baggagePolicy;
         if (
           !baggage ||
-          (dto.passengers.some((p) => p.extraBagWeightsKg?.length) &&
+          (dto.passengers.some((p: any) => p.extraBagWeightsKg?.length) &&
             baggage.currency !== leg.currency)
         )
           throw new ConflictException(
@@ -757,13 +757,13 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
     return [
       'reference,name,type,documentNumber,cabinClass',
       ...rows.flatMap((b) =>
-        b.passengers.map((p) =>
+        b.passengers.map((p: any) =>
           [
             b.reference,
             p.name,
             p.type,
             p.documentNumber,
-            b.legs.find((l) => String(l.flightId) === id).cabinClass,
+            b.legs.find((l: any) => String(l.flightId) === id).cabinClass,
           ]
             .map(cell)
             .join(','),
@@ -784,7 +784,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
     });
     const chunks: Buffer[] = [];
     const result = new Promise<Buffer>((resolve, reject) => {
-      document.on('data', (c) => chunks.push(c));
+      document.on('data', (c: any) => chunks.push(c));
       document.on('end', () => resolve(Buffer.concat(chunks)));
       document.on('error', reject);
     });
@@ -822,7 +822,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
     }
     document
       .text(
-        `Total paid: ${new Intl.NumberFormat('en', { style: 'currency', currency: b.currency }).format(b.totalMinor / 10 ** new Intl.NumberFormat('en', { style: 'currency', currency: b.currency }).resolvedOptions().maximumFractionDigits)}`,
+        `Total paid: ${new Intl.NumberFormat('en', { style: 'currency', currency: b.currency }).format(b.totalMinor / 10 ** new Intl.NumberFormat('en', { style: 'currency', currency: b.currency }).resolvedOptions().maximumFractionDigits!)}`,
       )
       .text('Payment verified by the payment provider.');
     document.end();

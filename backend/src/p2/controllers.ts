@@ -1,3 +1,4 @@
+import { Public } from '../common/decorators.js';
 import {
   Body,
   Controller,
@@ -17,9 +18,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { P2Access } from './access';
-import { AirportsService } from './airports.service';
-import { BookingsService } from './bookings.service';
+import { P2Access } from './access.js';
+import { AirportsService } from './airports.service.js';
+import { BookingsService } from './bookings.service.js';
 import {
   AirportQueryDto,
   BookingQueryDto,
@@ -32,16 +33,19 @@ import {
   SearchFlightsDto,
   UpdateCabinDto,
   UpdateFlightDto,
-} from './dto';
-import { FlightsService } from './flights.service';
-import { P2ErrorFilter } from './errors';
+} from './dto.js';
+import { FlightsService } from './flights.service.js';
+import { P2ErrorFilter } from './errors.js';
 
 @ApiTags('Airports')
 @UseFilters(P2ErrorFilter)
 @ApiResponse({ status: 400, description: 'Invalid airport query' })
+@Public()
 @Controller('airports')
 export class AirportsController {
   constructor(private readonly airports: AirportsService) {}
+  @Get(':code')
+  byCode(@Param('code') code: string) { return this.airports.byCode(code); }
   @Get()
   @ApiOperation({ summary: 'FLT-02: Look up official airport reference data' })
   find(@Query() q: AirportQueryDto) {
@@ -74,6 +78,7 @@ export class FlightsController {
   create(@Body() dto: CreateFlightDto, @Req() req: any) {
     return this.flights.create(dto, req.p2Principal);
   }
+  @Public()
   @Get('search')
   @ApiOperation({
     summary:
@@ -82,6 +87,7 @@ export class FlightsController {
   search(@Query() q: SearchFlightsDto) {
     return this.flights.search(q);
   }
+  @Public()
   @Get(':id')
   @ApiOperation({
     summary: 'FLT-17: Retrieve flight details, inventory and policy snapshot',
@@ -203,6 +209,7 @@ export class BookingsController {
   list(@Query() q: BookingQueryDto, @Req() req: any) {
     return this.bookings.list(req.p2Principal, q);
   }
+  @Public()
   @Get(':id')
   @ApiOperation({
     summary: 'FLT-21, FLT-25: Retrieve own booking and price summary',

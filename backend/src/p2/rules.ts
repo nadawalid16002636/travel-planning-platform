@@ -3,7 +3,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { PassengerDto } from './dto';
+import { PassengerDto } from './dto.js';
 
 export interface PassengerRules {
   source: string;

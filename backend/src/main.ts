@@ -1,45 +1,30 @@
-
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  // Prefix all API endpoints with /api
+  // rawBody is needed to verify Stripe webhook signatures (PAY-01)
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix('api');
-
-  // Enable validation for incoming requests
+  app.use(cookieParser());
+  app.enableCors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:3001', credentials: true });
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
-  // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Travel Planning Platform API')
-    .setDescription(
-      'REST API for Airlines, Flights, Bookings, Hotels, and more',
-    )
+    .setTitle('Travel Planning and Booking Platform API')
     .setVersion('1.0')
-    .addBearerAuth()
-    .addCookieAuth('session')
+    .addCookieAuth('access_token')
     .build();
+  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config), {
+    swaggerOptions: { withCredentials: true, persistAuthorization: true },
+  });
 
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('api/docs', app, document);
-
-  // Start server
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-
-  console.log(`Server running on http://localhost:${port}`);
-  console.log(`Swagger available at http://localhost:${port}/api/docs`);
+  console.log(`API on http://localhost:${port}/api  |  Swagger on http://localhost:${port}/api/docs`);
 }
-
-bootstrap();
+await bootstrap();

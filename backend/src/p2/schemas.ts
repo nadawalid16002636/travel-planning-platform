@@ -1,18 +1,6 @@
 import { Schema } from 'mongoose';
 
-export const AirportSchema = new Schema(
-  {
-    officialId: { type: String, required: true, unique: true },
-    code: { type: String, required: true, unique: true, match: /^[A-Z]{3}$/ },
-    name: { type: String, required: true },
-    city: { type: String, required: true },
-    country: { type: String, required: true },
-    timeZone: { type: String, required: true },
-    cityId: String,
-    countryCode: String,
-  },
-  { timestamps: true },
-);
+export { AirportSchema } from '../reference/schemas/reference.schemas.js';
 const cabin = new Schema({
   cabinClass: {
     type: String,

@@ -1,9 +1,9 @@
-import { P2Rules } from './rules';
-import { P2Access, objectId } from './access';
-import { airportInstant, localDate } from './flights.service';
+import { P2Rules } from './rules.js';
+import { P2Access, objectId } from './access.js';
+import { airportInstant, localDate } from './flights.service.js';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CreateFlightDto, CreateBookingDto, SearchFlightsDto } from './dto';
+import { CreateFlightDto, CreateBookingDto, SearchFlightsDto } from './dto.js';
 
 // Explicit synthetic test policy; these are not claimed to be official workbook rules.
 export const TEST_RULES = {

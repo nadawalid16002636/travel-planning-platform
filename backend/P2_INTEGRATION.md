@@ -2,18 +2,18 @@
 
 ## Setup and local verification
 
-Use Node.js compatible with NestJS 10 and the existing lockfile. From `backend`:
+Use Node.js compatible with the merged NestJS 12 backend and the existing lockfile. From `backend`:
 
 ```sh
 npm ci
 npm run build
-npm test -- --runInBand
-npm run test:e2e -- --runInBand
+npm test
+npm run test:e2e
 ```
 
 On Windows PowerShell with script execution disabled, use `npm.cmd`.
 The integration tests start a disposable, loopback-only MongoDB replica set;
-they never import AppModule, load `.env`, or connect to the team Atlas database.
+they never connect to the team Atlas database. The merged-app smoke test imports AppModule with an explicit disposable database URI.
 The first run downloads MongoDB into ignored `node_modules/.cache/mongodb-binaries`.
 Network access is needed once. `MONGOMS_SYSTEM_BINARY` can point to an already
 installed compatible MongoDB binary when downloads are unavailable. Tests fail,
@@ -32,40 +32,23 @@ duplicate records require team-leader reconciliation; no migration deletes data.
 
 ## P1: authentication and assignment
 
-P1 is absent from this checkout. Every P2 private/write route uses `P2Access`,
-which returns 401 until a trusted authentication adapter is registered. There
-is no production header bypass, fake login, hardcoded account, or competing JWT
-implementation. P1 should import `P2AccessModule`, inject `P2Access`, and call:
+The merged application uses P1's global AuthGuard and RolesGuard. P2SessionBridge
+maps only the database-verified request user into P2's principal: admin/user roles
+are retained and airline_moderator maps to airline-moderator with its providerId.
+P1 enforces session expiry, suspension, deactivation and password-change rules.
+P2Access still denies private access when no trusted adapter is registered.
+Public airport, flight search/details and airline detail routes use @Public().
+P2 ownership and assigned-airline checks remain in the services.
 
-```ts
-access.register({
-  authenticate: async (context) => {
-    // Verify the secure httpOnly session using P1's existing service.
-    // Also enforce expiry, suspension, and first-login password-change rules.
-    const account = await p1.verifySession(context.switchToHttp().getRequest());
-    if (!account) return null;
-    return {
-      id: String(account.id),
-      roles: account.roles, // map to 'admin', 'user', 'airline-moderator'
-      airlineIds: account.assignedAirline ? [String(account.assignedAirline)] : [],
-    };
-  },
-});
-```
+The merged-app smoke test boots AppModule against a disposable database and uses
+explicit test-only P1 service overrides to check public access, guest rejection,
+admin access and hotel-moderator rejection. Real cookie/browser and Atlas smoke
+testing remains pending. Payment, audit and deactivation coordination still need
+team verification; the session bridge does not claim those integrations.
 
-This is an integration example, not an implemented P1 service. Never construct
-the principal from client-provided user/role/provider fields. `P2Identity` is a
-shared injected registry so route guard instances use the registered adapter.
-Airline moderators must have exactly one assignment; users may manage only
-their own bookings. Administrators create airlines; airline moderators and
-administrators manage the authorized airline. P1 owns assignment persistence,
-administrative booking inspection, session security and CSRF protection.
-
-P2 Swagger declares cookie authentication (`session`); P1 must reconcile its
-actual cookie name. The existing bearer definition remains available for the
-team's other endpoints. The test header adapter exists only inside
-`p2.integration.spec.ts`, on its isolated test server, and is explicitly enabled
-by running that suite. It is never imported by the application.
+P2 and P1 use the same canonical Airport model with string IATA _id. P2 accepts
+existing P1 airport records and retains optional official metadata on insert.
+GET /airports is registered once through P2; /reference/airports remains available.
 
 ## P4: payment, refund and notification integration
 

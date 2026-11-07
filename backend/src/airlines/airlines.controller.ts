@@ -1,3 +1,4 @@
+import { Public } from '../common/decorators.js';
 import {
   Body,
   Controller,
@@ -16,13 +17,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AirlinesService } from './airlines.service';
-import { CreateAirlineDto } from './dto/create-airline.dto';
-import { UpdateAirlineDto } from './dto/update-airline.dto';
-import { UpdateBaggagePolicyDto } from './dto/update-baggage-policy.dto';
-import { CancellationPolicyDto } from '../p2/dto';
-import { P2Access } from '../p2/access';
-import { P2ErrorFilter } from '../p2/errors';
+import { AirlinesService } from './airlines.service.js';
+import { CreateAirlineDto } from './dto/create-airline.dto.js';
+import { UpdateAirlineDto } from './dto/update-airline.dto.js';
+import { UpdateBaggagePolicyDto } from './dto/update-baggage-policy.dto.js';
+import { CancellationPolicyDto } from '../p2/dto.js';
+import { P2Access } from '../p2/access.js';
+import { P2ErrorFilter } from '../p2/errors.js';
 
 @ApiTags('Airlines')
 @UseFilters(P2ErrorFilter)
@@ -59,6 +60,7 @@ export class AirlinesController {
     this.access.manage(req.p2Principal);
     return this.airlinesService.findAll();
   }
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'FLT-01: Retrieve airline and current policies' })
   findOne(@Param('id') id: string) {

@@ -1,3 +1,19 @@
+# Current integration status (2026-11-07)
+
+P2 was reconciled with develop's NestJS 12 / ESM / Vitest backend before publication.
+P1 session mapping is now wired through P2SessionBridge, and airport data uses P1's
+canonical string-IATA schema. Existing auth, hotels and shared startup are retained.
+The unrelated local app.controller.ts formatting edit is preserved in a Git stash;
+develop removed that starter controller.
+
+Verification after reconciliation: build passed; 38 tests passed across six suites,
+including a merged-AppModule authentication smoke test; one e2e health test passed;
+oxlint passed with warnings. Shared Atlas and real browser-session smoke testing,
+P4 payment/refund/notification execution, and account-deactivation/audit coordination
+remain pending. No production database operation was performed in this merge.
+The earlier handoff below describes the original isolated implementation and is
+historical where it refers to absent P1, Jest, uncommitted work or old lint results.
+
 # P2 backend review handoff
 
 Implementation is ready for code review on `feature/FLT-01-airlines`. Full team

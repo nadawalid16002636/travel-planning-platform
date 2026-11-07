@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
-import { P2Access, P2Principal, objectId } from './access';
-import { AirportsService } from './airports.service';
+import { P2Access, P2Principal, objectId } from './access.js';
+import { AirportsService } from './airports.service.js';
 import {
   CabinDto,
   CreateFlightDto,
   SearchFlightsDto,
   UpdateCabinDto,
-} from './dto';
-import { P2Rules } from './rules';
+} from './dto.js';
+import { P2Rules } from './rules.js';
 
 export function localDate(instant: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -23,7 +23,7 @@ export function localDate(instant: Date, timeZone: string) {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(instant);
-  const value = (name: string) => parts.find((p) => p.type === name).value;
+  const value = (name: string) => parts.find((p) => p.type === name)!.value;
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
 export function airportLocalTime(instant: Date, timeZone: string) {
@@ -106,7 +106,7 @@ export class FlightsService {
       throw new ConflictException(
         'Airline policies required before scheduling flights',
       );
-    if (new Set(dto.cabins.map((c) => c.currency)).size !== 1)
+    if (new Set(dto.cabins.map((c: any) => c.currency)).size !== 1)
       throw new BadRequestException('All cabins must use the same currency');
     try {
       return await this.flights.create({
@@ -121,7 +121,7 @@ export class FlightsService {
           cancellationPolicy: airline.cancellationPolicy,
         },
       });
-    } catch (e) {
+    } catch (e: any) {
       if (e.code === 11000)
         throw new ConflictException(
           'Duplicate flight identifier and departure',
@@ -156,7 +156,7 @@ export class FlightsService {
       arrivalAtLocal: airportLocalTime(f.arrivalAt, f.arrivalTimeZone),
       durationMinutes:
         (f.arrivalAt.getTime() - f.departureAt.getTime()) / 60000,
-      cabins: f.cabins.map((c) => ({
+      cabins: f.cabins.map((c: any) => ({
         ...c,
         availableSeats: c.capacity - c.reserved,
       })),
@@ -191,10 +191,10 @@ export class FlightsService {
     this.access.manage(user, String(f.airlineId));
     if (f.status !== 'scheduled' || f.departureAt <= new Date())
       throw new ConflictException('Flight is not editable');
-    const cabins = f.cabins.map((c) => ({ ...c }));
+    const cabins = f.cabins.map((c: any) => ({ ...c }));
     if (cabinId) {
       objectId(cabinId);
-      const target = cabins.find((c) => String(c._id) === cabinId);
+      const target = cabins.find((c: any) => String(c._id) === cabinId);
       if (!target) throw new NotFoundException('Cabin not found');
       if (dto.capacity !== undefined && dto.capacity < target.reserved)
         throw new ConflictException(
@@ -209,8 +209,8 @@ export class FlightsService {
       Object.assign(target, dto);
     } else cabins.push({ ...dto, reserved: 0, _id: new Types.ObjectId() });
     if (
-      new Set(cabins.map((c) => c.cabinClass)).size !== cabins.length ||
-      new Set(cabins.map((c) => c.currency)).size !== 1
+      new Set(cabins.map((c: any) => c.cabinClass)).size !== cabins.length ||
+      new Set(cabins.map((c: any) => c.currency)).size !== 1
     )
       throw new BadRequestException(
         'Unique cabin classes and one currency required',
@@ -384,7 +384,7 @@ export class FlightsService {
             inbound: await leg(
               q.arrivalAirport,
               q.departureAirport,
-              q.returnDate,
+              q.returnDate!,
               destination.timeZone,
             ),
           }

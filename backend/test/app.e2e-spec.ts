@@ -1,27 +1,26 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppController } from '../src/app.controller';
-import { AppService } from '../src/app.service';
+import request from 'supertest';
+import { App } from 'supertest/types.js';
+import { HealthController } from './../src/health.controller.js';
 
-// The starter health test must not connect to the real Atlas database.
-describe('AppController (isolated e2e)', () => {
-  let app: INestApplication;
-  beforeAll(async () => {
-    const fixture = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [AppService],
+describe('Health (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeEach(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      controllers: [HealthController],
     }).compile();
-    app = fixture.createNestApplication();
-    app.setGlobalPrefix('api');
+
+    app = moduleFixture.createNestApplication();
     await app.init();
   });
-  afterAll(async () => {
+
+  it('/health (GET)', () => {
+    return request(app.getHttpServer()).get('/health').expect(200);
+  });
+
+  afterEach(async () => {
     await app.close();
   });
-  it('GET /api', () =>
-    request(app.getHttpServer())
-      .get('/api')
-      .expect(200)
-      .expect('Hello World!'));
 });

@@ -18,6 +18,7 @@ import {
   IsString,
   Matches,
   Max,
+  MaxLength,
   Min,
   ValidateIf,
   ValidateNested,
@@ -215,6 +216,8 @@ export class ConfirmCancellationDto {
   @ApiProperty() @Equals(true) confirmed: boolean;
 }
 export class AirportQueryDto extends PageDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) search?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @Matches(/^[A-Za-z]{2,3}$/) country?: string;
   @ApiPropertyOptional() @IsOptional() @Matches(/^[A-Z]{3}$/) code?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @Matches(/\S/) city?: string;
 }

@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { objectId } from '../p2/access';
+import { objectId } from '../p2/access.js';
 import { MongoServerError } from 'mongodb';
 
-import { Airline } from './schemas/airline.schema';
-import { CreateAirlineDto } from './dto/create-airline.dto';
-import { UpdateAirlineDto } from './dto/update-airline.dto';
+import { Airline } from './schemas/airline.schema.js';
+import { CreateAirlineDto } from './dto/create-airline.dto.js';
+import { UpdateAirlineDto } from './dto/update-airline.dto.js';
 
 @Injectable()
 export class AirlinesService {

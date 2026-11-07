@@ -1,12 +1,12 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { MongoServerError } from 'mongodb';
-import { AirlinesService } from './airlines.service';
+import { AirlinesService } from './airlines.service.js';
 
 describe('AirlinesService error handling', () => {
   const id = '507f1f77bcf86cd799439011';
   it('maps duplicate identifier writes to HTTP 409', async () => {
     const model: any = {
-      create: jest
+      create: vi
         .fn()
         .mockRejectedValue(
           new MongoServerError({ code: 11000, message: 'duplicate' }),

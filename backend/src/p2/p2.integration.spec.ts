@@ -1,18 +1,20 @@
+import { fileURLToPath } from 'node:url';
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
-import * as request from 'supertest';
+import request from 'supertest';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { AirlinesModule } from '../airlines/airlines.module';
-import { P2Module } from './p2.module';
-import { P2Access } from './access';
-import { P2Rules } from './rules';
-import { AirportsService } from './airports.service';
-import { BookingsService } from './bookings.service';
+import { AirlinesModule } from '../airlines/airlines.module.js';
+import { P2Module } from './p2.module.js';
+import { P2Access } from './access.js';
+import { P2Rules } from './rules.js';
+import { AirportsService } from './airports.service.js';
+import { BookingsService } from './bookings.service.js';
 
 // Synthetic fixtures only. This suite never loads AppModule, ConfigModule or .env.
 const rules = {
@@ -866,7 +868,7 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       app,
       new DocumentBuilder().addCookieAuth('session').build(),
     );
-    expect(Object.keys(doc.paths)).toHaveLength(19);
+    expect(Object.keys(doc.paths)).toHaveLength(20);
     expect(doc.components.securitySchemes.cookie).toMatchObject({
       type: 'apiKey',
       in: 'cookie',
@@ -883,4 +885,41 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       doc.paths['/api/flights/search'].get.parameters.length,
     ).toBeGreaterThan(5);
   });
+  it('boots the merged application with P1 guards and maps verified sessions into P2', async () => {
+    const saved = { uri: process.env.MONGODB_URI, secret: process.env.JWT_SECRET, email: process.env.ADMIN_EMAIL };
+    process.env.MONGODB_URI = db.getUri('p2_merged_smoke');
+    process.env.JWT_SECRET = 'isolated-test-secret-never-used-outside-tests';
+    process.env.ADMIN_EMAIL = '';
+    let merged: INestApplication | undefined;
+    try {
+      const { AppModule } = await import('../app.module.js');
+      const { SessionsService } = await import('../auth/sessions.service.js');
+      const { UsersService } = await import('../users/users.service.js');
+      const { Role } = await import('../common/roles.js');
+      const { AccountStatus } = await import('../users/schemas/user.schema.js');
+      let authenticated = false;
+      let role = Role.ADMIN;
+      const fixture = await Test.createTestingModule({ imports: [AppModule] })
+        .overrideProvider(SessionsService).useValue({ authenticate: async () => authenticated ? { userId: '507f1f77bcf86cd799439011', sessionId: 'test' } : null })
+        .overrideProvider(UsersService).useValue({ findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }) })
+        .compile();
+      merged = fixture.createNestApplication();
+      merged.setGlobalPrefix('api');
+      merged.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+      await merged.init();
+      const http = request(merged.getHttpServer());
+      await http.get('/api/airports').expect(200);
+      await http.get('/api/airlines').expect(401);
+      authenticated = true;
+      await http.get('/api/airlines').expect(200);
+      role = Role.HOTEL_MOD;
+      await http.get('/api/airlines').expect(403);
+    } finally {
+      await merged?.close();
+      for (const [key, value] of Object.entries({ MONGODB_URI: saved.uri, JWT_SECRET: saved.secret, ADMIN_EMAIL: saved.email })) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    }
+  }, 30000);
+
 });
