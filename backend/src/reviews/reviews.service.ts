@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { isMongoId } from 'class-validator';
-import { Connection, Model, Types } from 'mongoose';
+import { Model, Types, type Connection } from 'mongoose';
 import { assertOwner } from '../common/guards.js';
 import { JwtUser } from '../common/roles.js';
 import {

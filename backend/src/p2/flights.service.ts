@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Model, Types } from 'mongoose';
+import { Model, Types, type ClientSession } from 'mongoose';
 import { P2Access, P2Principal, objectId } from './access.js';
 import { AirportsService } from './airports.service.js';
 import {

@@ -10,7 +10,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Connection, Model } from 'mongoose';
+import { Model, type ClientSession, type Connection } from 'mongoose';
 import { randomBytes } from 'crypto';
 import { P2Access, P2Principal, objectId } from './access.js';
 import {

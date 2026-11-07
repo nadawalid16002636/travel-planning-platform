@@ -3,7 +3,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 import { Test } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import request from 'supertest';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
