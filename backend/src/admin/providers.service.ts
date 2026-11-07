@@ -79,7 +79,9 @@ export class ProvidersService {
     const flight = this.model('FlightBooking');
     const hotel = this.model('HotelBooking');
     const [flights, hotels] = await Promise.all([
-      flight ? flight.countDocuments({ userId, status: 'confirmed', 'legs.0.departureAt': { $gt: now } }) : 0,
+      flight
+        ? flight.countDocuments({ userId, status: 'confirmed', legs: { $elemMatch: { departureAt: { $gt: now } } } })
+        : 0, // any leg: a round trip whose return flight is still ahead counts
       hotel && Types.ObjectId.isValid(userId)
         ? hotel.countDocuments({ userId: new Types.ObjectId(userId), status: 'confirmed', checkIn: { $gt: now } })
         : 0,
