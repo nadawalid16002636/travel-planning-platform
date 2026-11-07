@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { isMongoId } from 'class-validator';
-import { Connection, Model, Types } from 'mongoose';
+import { Model, Types, type Connection } from 'mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PaymentsService } from '../payments/payments.service.js';
 import { assertOwner } from '../common/guards.js';
