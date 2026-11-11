@@ -162,3 +162,18 @@ Then ran 52 live checks against the running API (auth, users, admin, reference a
 all passed. Left GEN-01 notifications (P4) and the ACC-12 "Deleted user" display (P3/P5) to their
 owners.
 ================================================
+================================================
+Date: 2026-11-11
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: ACC-04, ACC-13, ACC-15, GEN-05, GEN-09, GEN-10, BLG-01..BLG-12 (permission and validation checks)
+Prompt:
+Read the backend on develop, list every endpoint with its role guards, and write a permission-leak test
+checklist (guest, user vs user, moderator vs other provider, admin-only routes, account states, input
+validation). Then run the guest, user-on-admin-route and validation tests against the running API on a
+local in-memory MongoDB and log the results.
+How the output was used:
+Saved the checklist and run log as docs/qa/PERMISSION_TESTS.md; the tests were run through the Swagger page in the browser.
+Reported two bugs to their owners: P2 routes use a different error format from the global filter, and
+GET /api/hotels is not paginated (GEN-05).
+================================================
