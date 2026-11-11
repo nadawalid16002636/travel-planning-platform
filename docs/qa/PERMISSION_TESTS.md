@@ -127,3 +127,34 @@ hidden posts are visible only to the author and admins (GEN-10), one like per us
    or `POST /api/airlines` as a user. Likely cause: `@UseFilters(P2ErrorFilter)` overrides the global filter. Owner: P2.
 2. **`GET /api/hotels` is not paginated (GEN-05).** It returns a bare array `[]` instead of `{ data, page, limit, total }`, and accepts
    `limit=1000` with 200. Recheck once hotels exist. Owner: P3.
+
+## Run log 2: 11 Nov 2026, local in-memory DB (admin, 2 hotels, 2 airlines, 5 moderators, 3 users)
+
+| # | Result | Notes |
+| --- | --- | --- |
+| M1–M5 | ✅ | hotelModA → hotel B: 403 "You can only manage your assigned provider" (edit, rooms, policies, reservations, availability) |
+| M4 (reverse) | ✅ | hotelModB → hotel A reservations: 403 |
+| Own provider | ✅ | hotelModA edits hotel A: 200; airlineModA edits airline A: 200 |
+| M6–M9 | ✅ | airlineModA → airline B (edit, cancellation policy, create flight, view flight bookings): 403 |
+| M10, M11 | ✅ | hotel moderator → airline: 403; airline moderator → hotel: 403 |
+| M12 | ✅ | moderator → admin accounts: 403 |
+| M13 | ✅ | moderator `DELETE /users/me`: 403 |
+| M14 | ✅ | moderators can't book a hotel or hold flight seats: 403 |
+| O3 (hold) | ✅ | userB → userA's flight hold: 404 |
+| O7 | ✅ | userB's booking lists are empty (no one else's data) |
+| S1 | ✅ | 5th wrong password → 403 locked for 15 min, and the correct password is also refused while locked |
+| S3 | ✅ | suspended user can't log in: 403 "This account is suspended" |
+| S4 | ✅ | temp password (admin reset, or a new moderator) → 403 `PASSWORD_CHANGE_REQUIRED` on `/users/me`, bookings and hotel edits. `/auth/me` still answers 200, which looks intentional so the frontend can read the user |
+| O1, O2, O4, O8 | ⏳ | blocked: couldn't create a hotel booking (see question below); flight booking needs payments (P4) |
+| S2, S5–S7 | ⏳ | not run yet |
+
+### Bugs found
+
+3. **List responses use two different shapes (GEN-05).** `GET /api/flight-bookings` returns `{ items, total, page, limit }` (default limit 20),
+   while the rest of the API returns `{ data, page, limit, total }` (default 10). The frontend would need two different list readers. Owner: P2.
+
+### Questions for P3 (hotels)
+
+- After adding a room, `POST /api/hotel-bookings` always returns 409 "Room ... is unavailable for the selected dates". `POST .../availability` with
+  `availabilityRanges` answers 400 "Provide dates to block or unblock", and `PATCH .../availability` answers 404 "Room not found" for the same room id.
+  What's the intended way to make a new room bookable? If PATCH should find the room, it's a bug.
