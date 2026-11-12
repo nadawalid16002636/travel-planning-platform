@@ -8,7 +8,7 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { isMongoId } from 'class-validator';
 import { Model, Types, type Connection } from 'mongoose';
 import { assertOwner } from '../common/guards.js';
-import { JwtUser } from '../common/roles.js';
+import { JwtUser, Role } from '../common/roles.js';
 import {
   HotelBooking,
   HotelBookingStatus,
@@ -79,11 +79,17 @@ export class ReviewsService {
     }
   }
 
-  async findForHotel(hotelId: string, query: ReviewQueryDto) {
+  async findForHotel(hotelId: string, query: ReviewQueryDto, viewer?: JwtUser) {
     this.validateId(hotelId);
     const hotel = await this.hotelModel.findById(hotelId).exec();
     if (!hotel) throw new NotFoundException('Hotel not found');
-    const filter = { hotelId: new Types.ObjectId(hotelId) };
+    const filter: Record<string, unknown> = { hotelId: new Types.ObjectId(hotelId) };
+    if (viewer?.role !== Role.ADMIN) {
+      filter.$or = [
+        { hidden: { $ne: true } },
+        ...(viewer ? [{ userId: new Types.ObjectId(viewer.sub), hidden: true }] : []),
+      ];
+    }
     const [data, total] = await Promise.all([
       this.reviewModel
         .find(filter)
@@ -94,6 +100,21 @@ export class ReviewsService {
       this.reviewModel.countDocuments(filter).exec(),
     ]);
     return { data, page: query.page, limit: query.limit, total };
+  }
+
+  findById(id: string) {
+    if (!isMongoId(id)) return null;
+    return this.reviewModel.findById(id).exec();
+  }
+
+  async moderate(id: string, action: 'hide' | 'delete') {
+    this.validateId(id);
+    const review = await this.reviewModel.findById(id).exec();
+    if (!review) throw new NotFoundException('Review not found');
+    if (action === 'delete') await this.reviewModel.deleteOne({ _id: id }).exec();
+    else await this.reviewModel.updateOne({ _id: id }, { $set: { hidden: true } }).exec();
+    await this.updateHotelRating(review.hotelId);
+    return { id, action };
   }
 
   async update(id: string, user: JwtUser, dto: UpdateReviewDto) {
@@ -142,7 +163,7 @@ export class ReviewsService {
       averageRating: number;
       count: number;
     }>([
-      { $match: { hotelId } },
+      { $match: { hotelId, hidden: { $ne: true } } },
       {
         $group: {
           _id: null,

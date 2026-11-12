@@ -11,6 +11,7 @@ import { isMongoId } from 'class-validator';
 import { Model, Types, type Connection } from 'mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PaymentsService } from '../payments/payments.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { assertOwner } from '../common/guards.js';
 import { JwtUser } from '../common/roles.js';
 import { Hotel, HotelStatus } from '../hotels/entities/hotel.entity.js';
@@ -86,6 +87,7 @@ export class HotelBookingsService implements OnModuleInit {
     @InjectModel(HotelRoom.name)
     private readonly roomModel: Model<HotelRoom>,
     private readonly payments: PaymentsService,
+    private readonly notifications?: NotificationsService,
   ) {}
 
   onModuleInit() {
@@ -463,6 +465,11 @@ export class HotelBookingsService implements OnModuleInit {
     } finally {
       await session.endSession();
     }
+    await this.notifications?.notify(String(booking.userId), 'BOOKING_CANCELLED', {
+      bookingType: 'hotel',
+      bookingId: String(booking._id),
+      refundId: refundId ?? null,
+    });
     return this.bookingModel.findById(id).exec();
   }
 

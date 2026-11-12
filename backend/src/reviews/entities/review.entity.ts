@@ -25,6 +25,10 @@ export class Review {
 
   @Prop({ trim: true, maxlength: 2000 })
   reply?: string;
+
+  /** GEN-10: hidden reviews stay visible to the author and to admins. */
+  @Prop({ default: false, index: true })
+  hidden: boolean;
 }
 
 export type ReviewDocument = HydratedDocument<Review>;

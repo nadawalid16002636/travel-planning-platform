@@ -22,3 +22,6 @@ coverage/
 
 # Local generated P2 test artifacts
 backend/.tmp/
+
+# Uploaded images (GEN-08). The database stores the URL, not the file.
+backend/uploads/
