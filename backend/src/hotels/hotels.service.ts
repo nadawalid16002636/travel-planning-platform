@@ -76,9 +76,7 @@ function dateRangeCovers(
     (range) => range.startDate <= checkIn && range.endDate >= checkOut,
   );
   if (!isInBookableRange) return false;
-  if (
-    room.blockedDates.some((day) => day >= checkIn && day < checkOut)
-  ) {
+  if (room.blockedDates.some((day) => day >= checkIn && day < checkOut)) {
     return false;
   }
   return !room.reservations.some(
@@ -403,33 +401,34 @@ export class HotelsService {
     hotelId: string,
     checkInValue: string,
     checkOutValue: string,
-    guests: number,
   ) {
     await this.findOne(hotelId);
     const checkIn = parseDate(checkInValue);
     const checkOut = parseDate(checkOutValue);
     if (checkOut <= checkIn)
       throw new BadRequestException('checkOut must be after checkIn');
+    if (checkIn < parseDate(new Date().toISOString().slice(0, 10))) {
+      throw new BadRequestException('checkIn cannot be in the past');
+    }
     const rooms = await this.roomModel
       .find({
         hotelId,
         isActive: true,
       })
-      .select('-reservations')
       .exec();
     return rooms
-      .filter(
-        (room) =>
-          room.maxOccupancy >= guests &&
-          dateRangeCovers(room, checkInValue, checkOutValue, new Date()),
+      .filter((room) =>
+        dateRangeCovers(room, checkInValue, checkOutValue, new Date()),
       )
-      .map((room) =>
-        Object.assign(room.toObject(), {
+      .map((room) => {
+        const availableRoom = room.toObject();
+        Reflect.deleteProperty(availableRoom, 'reservations');
+        return Object.assign(availableRoom, {
           totalStayPrice:
-          (room.pricePerNight * (checkOut.getTime() - checkIn.getTime())) /
-          DAY_MS,
-        }),
-      );
+            (room.pricePerNight * (checkOut.getTime() - checkIn.getTime())) /
+            DAY_MS,
+        });
+      });
   }
 
   async getAvailability(hotelId: string, query: RoomAvailabilityQueryDto) {
@@ -441,7 +440,9 @@ export class HotelsService {
     }
     const nights = (checkOut.getTime() - checkIn.getTime()) / DAY_MS;
     if (nights > 365) {
-      throw new BadRequestException('Availability range cannot exceed 365 days');
+      throw new BadRequestException(
+        'Availability range cannot exceed 365 days',
+      );
     }
     const rooms = await this.roomModel
       .find({ hotelId, isActive: true })
@@ -464,8 +465,7 @@ export class HotelsService {
                 item.expiresAt > now)),
         );
         const bookable = room.availabilityRanges.some(
-          (range) =>
-            range.startDate <= date && range.endDate >= nextDate,
+          (range) => range.startDate <= date && range.endDate >= nextDate,
         );
         dates.push(
           reservation
@@ -498,11 +498,7 @@ export class HotelsService {
     const blockedDates = dto.blockedDates ?? [];
     const unblockedDates = dto.unblockedDates ?? [];
     const availabilityRanges = dto.availabilityRanges;
-    if (
-      !blockedDates.length &&
-      !unblockedDates.length &&
-      !availabilityRanges
-    ) {
+    if (!blockedDates.length && !unblockedDates.length && !availabilityRanges) {
       throw new BadRequestException('Provide dates to block or unblock');
     }
     if (availabilityRanges) this.validateAvailabilityRanges(availabilityRanges);
@@ -611,7 +607,7 @@ export class HotelsService {
 
   async findDetail(
     id: string,
-    query: Pick<HotelSearchDto, 'checkIn' | 'checkOut' | 'guests'>,
+    query: Pick<HotelSearchDto, 'checkIn' | 'checkOut'>,
   ) {
     const hotel = await this.findOne(id);
     if (Boolean(query.checkIn) !== Boolean(query.checkOut)) {
@@ -619,12 +615,7 @@ export class HotelsService {
     }
     const rooms =
       query.checkIn && query.checkOut
-        ? await this.getAvailableRooms(
-        id,
-        query.checkIn,
-        query.checkOut,
-        query.guests,
-          )
+        ? await this.getAvailableRooms(id, query.checkIn, query.checkOut)
         : await this.getRooms(id);
     const reviews = await this.reviewModel
       .find({ hotelId: id })
@@ -642,7 +633,9 @@ export class HotelsService {
         endDate: parseDate(range.endDate),
         range,
       }))
-      .sort((left, right) => left.startDate.getTime() - right.startDate.getTime());
+      .sort(
+        (left, right) => left.startDate.getTime() - right.startDate.getTime(),
+      );
     for (const { startDate, endDate } of sorted) {
       if (endDate <= startDate) {
         throw new BadRequestException(
@@ -652,14 +645,18 @@ export class HotelsService {
     }
     for (let index = 1; index < sorted.length; index += 1) {
       if (sorted[index].startDate < sorted[index - 1].endDate) {
-        throw new BadRequestException('Availability date ranges cannot overlap');
+        throw new BadRequestException(
+          'Availability date ranges cannot overlap',
+        );
       }
     }
     return sorted.map(({ range }) => range);
   }
 
   private async assertPlatformCurrency(currency: string) {
-    const platformCurrency = (process.env.PLATFORM_CURRENCY ?? 'USD').toUpperCase();
+    const platformCurrency = (
+      process.env.PLATFORM_CURRENCY ?? 'USD'
+    ).toUpperCase();
     if (currency.toUpperCase() !== platformCurrency) {
       throw new BadRequestException(
         `Hotel room prices must use platform currency ${platformCurrency}`,

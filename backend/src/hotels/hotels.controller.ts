@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -145,24 +144,13 @@ export class HotelsController {
   })
   @ApiQuery({ name: 'checkIn', type: String, format: 'date', required: true })
   @ApiQuery({ name: 'checkOut', type: String, format: 'date', required: true })
-  @ApiQuery({ name: 'guests', type: Number, minimum: 1, maximum: 20 })
   @ApiErrors(400, [404, 'Hotel not found'])
   availableRooms(
     @Param('id', ParseObjectIdPipe) id: string,
     @Query('checkIn') checkIn: string,
     @Query('checkOut') checkOut: string,
-    @Query('guests') guests = '1',
   ) {
-    const guestCount = Number(guests);
-    if (!Number.isInteger(guestCount) || guestCount < 1 || guestCount > 20) {
-      throw new BadRequestException('guests must be an integer from 1 to 20');
-    }
-    return this.hotelsService.getAvailableRooms(
-      id,
-      checkIn,
-      checkOut,
-      guestCount,
-    );
+    return this.hotelsService.getAvailableRooms(id, checkIn, checkOut);
   }
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
@@ -225,7 +213,9 @@ export class HotelsController {
 
   @Roles(Role.ADMIN, Role.HOTEL_MOD)
   @Put(':id/policies')
-  @ApiOperation({ summary: 'HTL-09, HTL-10: set hotel times and cancellation tiers' })
+  @ApiOperation({
+    summary: 'HTL-09, HTL-10: set hotel times and cancellation tiers',
+  })
   @ApiErrors(400, 401, 403, [404, 'Hotel not found'])
   async updatePolicy(
     @Param('id', ParseObjectIdPipe) id: string,
