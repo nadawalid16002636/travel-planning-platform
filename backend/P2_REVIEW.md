@@ -1,4 +1,14 @@
-# Current integration status (2026-11-07)
+# Current integration status (2026-11-13)
+
+Person 4's branch is now integrated locally. The payment webhook checks a retrieved
+PaymentIntent against its registered ownership, amount and currency, and delayed
+failure events cannot reverse a current Stripe success. Flight outbox notification
+delivery is deduplicated by event ID. Real Stripe/Atlas verification remains pending.
+Verification: build passed, all 48 tests across ten suites passed, the e2e test
+passed, and oxlint passed with five existing warnings. The merged-AppModule test
+also checks concurrent outbox delivery creates one notification and replay preserves
+its read status. Tests use disposable local MongoDB; no Atlas writes or real Stripe
+charges/refunds were performed. The older status and handoff below are historical.
 
 P2 was reconciled with develop's NestJS 12 / ESM / Vitest backend before publication.
 P1 session mapping is now wired through P2SessionBridge, and airport data uses P1's

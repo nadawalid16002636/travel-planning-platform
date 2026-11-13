@@ -901,12 +901,24 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       let role = Role.ADMIN;
       const fixture = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(SessionsService).useValue({ authenticate: async () => authenticated ? { userId: '507f1f77bcf86cd799439011', sessionId: 'test' } : null })
-        .overrideProvider(UsersService).useValue({ findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }) })
+        .overrideProvider(UsersService).useValue({ registerDeactivationCheck: () => {}, findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }) })
         .compile();
       merged = fixture.createNestApplication();
       merged.setGlobalPrefix('api');
       merged.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
       await merged.init();
+      const { NotificationsService } = await import('../notifications/notifications.service.js');
+      const notifications = merged.get(NotificationsService);
+      const mergedConnection = merged.get<Connection>(getConnectionToken());
+      const notificationModel = mergedConnection.model('Notification');
+      await notificationModel.init();
+      await Promise.all(Array.from({ length: 8 }, () =>
+        notifications.notify('test-owner', 'BOOKING_CONFIRMED', { bookingId: 'test-booking' }, 'test-outbox-event'),
+      ));
+      expect(await notificationModel.countDocuments({ sourceEventId: 'test-outbox-event' })).toBe(1);
+      await notifications.markAllRead('test-owner');
+      await notifications.notify('test-owner', 'BOOKING_CONFIRMED', {}, 'test-outbox-event');
+      expect(await notifications.unreadCount('test-owner')).toEqual({ count: 0 });
       const http = request(merged.getHttpServer());
       await http.get('/api/airports').expect(200);
       await http.get('/api/airlines').expect(401);

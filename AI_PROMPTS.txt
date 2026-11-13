@@ -197,3 +197,7 @@ the webhook, policy acceptance, the flight outbox worker, notification storage, 
 upload limits, and report moderation. Wired hotel cancellation to an in-app notification
 and hid moderated reviews from the public hotel review list.
 ================================================
+
+2026-11-13 P2 continuation after P4: User supplied feature/P4-payments-notifications-uploads-reports. Integrated via local fast-forward; added retrieved PaymentIntent ownership/amount/currency verification, current-outcome handling, durable flight notification deduplication, regression tests, and updated the merged-app mock and handoff. No push or production database operation.
+
+2026-11-13 P2 finalization: User requested completion, push and merge. Refreshed origin/develop (P2 already merged in PR #5 and P4 in PR #11). Added concurrent durable notification replay verification and preserved read state. Build, 48 unit/integration tests, one e2e test, and oxlint passed (five existing warnings). Prepared P2 payment-integration fixes for commit and publication into develop. Live Atlas and Stripe execution remain unverified.
