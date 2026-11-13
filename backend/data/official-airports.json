@@ -1,0 +1,82 @@
+[
+  {
+    "officialId": "CAI",
+    "code": "CAI",
+    "name": "Cairo International Airport",
+    "cityId": "cairo",
+    "city": "Cairo",
+    "countryCode": "EG",
+    "country": "Egypt",
+    "timeZone": "Africa/Cairo"
+  },
+  {
+    "officialId": "DXB",
+    "code": "DXB",
+    "name": "Dubai International Airport",
+    "cityId": "dubai",
+    "city": "Dubai",
+    "countryCode": "AE",
+    "country": "United Arab Emirates",
+    "timeZone": "Asia/Dubai"
+  },
+  {
+    "officialId": "LHR",
+    "code": "LHR",
+    "name": "Heathrow Airport",
+    "cityId": "london",
+    "city": "London",
+    "countryCode": "GB",
+    "country": "United Kingdom",
+    "timeZone": "Europe/London"
+  },
+  {
+    "officialId": "JFK",
+    "code": "JFK",
+    "name": "John F. Kennedy International Airport",
+    "cityId": "new_york",
+    "city": "New York",
+    "countryCode": "US",
+    "country": "United States",
+    "timeZone": "America/New_York"
+  },
+  {
+    "officialId": "CDG",
+    "code": "CDG",
+    "name": "Charles de Gaulle Airport",
+    "cityId": "paris",
+    "city": "Paris",
+    "countryCode": "FR",
+    "country": "France",
+    "timeZone": "Europe/Paris"
+  },
+  {
+    "officialId": "HND",
+    "code": "HND",
+    "name": "Haneda Airport",
+    "cityId": "tokyo",
+    "city": "Tokyo",
+    "countryCode": "JP",
+    "country": "Japan",
+    "timeZone": "Asia/Tokyo"
+  },
+  {
+    "officialId": "RUH",
+    "code": "RUH",
+    "name": "King Khalid International Airport",
+    "cityId": "riyadh",
+    "city": "Riyadh",
+    "countryCode": "SA",
+    "country": "Saudi Arabia",
+    "timeZone": "Asia/Riyadh"
+  },
+  {
+    "officialId": "FRA",
+    "code": "FRA",
+    "name": "Frankfurt Airport",
+    "cityId": "frankfurt",
+    "city": "Frankfurt",
+    "countryCode": "DE",
+    "country": "Germany",
+    "timeZone": "Europe/Berlin"
+  }
+]

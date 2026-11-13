@@ -80,3 +80,124 @@ paginated reference lists with validated query DTOs (GEN-05), strict ObjectId ch
 equalised for unknown emails, .env.* ignored. Retested the flows against the running API with curl.
 Left ACC-12 booking check, ACC-13 provider check, ACC-15 providers and ACC-17 to the booking/provider modules.
 ================================================
+================================================
+Date: 2026-11-07 (work began 2026-11-02)
+Student role: P2 - Airlines, Flights, Flight Bookings
+AI tool: Codex
+Related requirements: FLT-01, FLT-02, FLT-03, FLT-04, FLT-05, FLT-06,
+FLT-08, FLT-09, FLT-11, FLT-12, FLT-15, FLT-17, FLT-19, FLT-21,
+FLT-22, FLT-23, FLT-25, FLT-26, FLT-29, FLT-30; integration dependencies
+ACC-11, ACC-13, PAY-01, PAY-02, PAY-03, GEN-01, GEN-06, GEN-11.
+Prompt summary:
+Implement the assigned P2 backend in the existing NestJS/MongoDB/TypeScript
+workspace, preserving teammate code and shared records; inspect official
+requirements, complete airline policies, airports, flights, searches, atomic
+seat holds, owned bookings, payment-side transitions, cancellations and tickets;
+protect private endpoints, document dependencies and run isolated tests.
+Additional user material:
+Four local Mock Data workbooks and desc.pdf were supplied. The PDF linked the
+official requirements workbook, which was retrieved and used to replace initial
+provisional designs with exact passenger, baggage, cancellation and hold rules.
+How the AI output was reviewed and used:
+Codex inspected existing code and Git changes, implemented the P2 modules,
+reviewed the requirement text, and exercised the implementation with unit,
+HTTP and real ephemeral MongoDB replica-set tests. A generated PDF ticket was
+rendered and visually inspected. No teammate-owned authentication, Stripe,
+notification or upload service was fabricated. Shared Atlas airport import
+attempts failed and remain documented; isolated official seed imports passed.
+The student and team leader still need to review, understand and approve the
+implementation and integration contracts before submission/merging. Automated
+checks do not represent student review or completed P1/P4 integration.
+No commit, push, PR, merge, collection deletion or database reset was performed.
+================================================
+
+2026-11-07 continuation: User requested installation of GitHub CLI, then explicit
+push and merge of P2. Codex reconciled with develop, retained the newer NestJS/ESM
+setup and teammates' auth/hotels, adapted tests to Vitest, wired verified P1 session
+mapping and shared airport schema, and verified build/tests/lint before publication.
+
+================================================
+Date: 2026-11-07
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: ACC-12, ACC-13, ACC-15, ACC-17, GEN-07
+Prompt:
+Finish the admin items that were waiting on the flight and hotel modules: a read-only list of all
+flight and hotel bookings for admins (filter by type, status and date range, paginated), admin
+deactivate/reactivate of an airline or hotel with in-app notifications to its moderators and to
+travelers with upcoming confirmed bookings, a check that a new moderator's airline or hotel exists,
+and the "upcoming confirmed bookings" check that blocks self-deactivation. Then find out why the
+backend would not start after merging P2 and P3.
+How the output was used:
+Added GET /api/admin/bookings, PATCH /api/admin/providers/{type}/{id}/deactivate and /reactivate
+(audit-logged), the provider existence check on POST /api/admin/moderators, and the ACC-12
+deactivation check. These read the P2/P3 models through the shared connection, so their modules
+are not imported. The startup crash came from mongoose types (Connection, ClientSession) imported as
+runtime values in P2/P3 files; changed them to type-only imports in a separate commit. Removed the unused
+reference/airports.controller.ts (P2 serves /api/airports). Verified that the app boots and that the new
+routes appear in Swagger, then tested them in Swagger logged in as the admin: the bookings list and its
+type/status/date filters, airline and hotel deactivate/reactivate, the 404 when creating a moderator for
+an unknown airline or hotel, and the matching audit log entries.
+================================================
+
+================================================
+Date: 2026-11-07
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: ACC-12, ACC-17, ACC-18
+Prompt:
+Act as a strict TA and give a final review of the team lead's part (auth, users, admin, audit,
+reference, common, app.module, main, seed, README, .env.example, .gitignore, AI_PROMPTS, docs) against
+ACC-01 to ACC-19, GEN-01, GEN-05, GEN-07, GEN-12 and GEN-13, with file:line evidence, after merging the
+P2/P3 modules and the admin bookings work. Check that the admin code matches the P2/P3 schemas and look
+for bugs and security issues.
+How the output was used:
+Fixed the three issues in my part that the review found: (1) ACC-12: the deactivation check now counts
+a confirmed flight booking if any leg is still ahead (before, only the first leg was checked, so a round
+trip with an upcoming return flight did not block deactivation); (2) ACC-17: the admin bookings list caps
+page at 1000, because merging flights and hotels loads page x limit rows; (3) ACC-18: backend/.env.example
+now has every key from the root .env.example (admin seed, cookies, JWT, Stripe, FX), and the API logs a
+warning when ADMIN_EMAIL / ADMIN_PASSWORD are missing instead of skipping the admin seed silently.
+Then ran 52 live checks against the running API (auth, users, admin, reference and the P2/P3 integration);
+all passed. Left GEN-01 notifications (P4) and the ACC-12 "Deleted user" display (P3/P5) to their
+owners.
+================================================
+================================================
+Date: 2026-11-11
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: ACC-04, ACC-13, ACC-15, GEN-05, GEN-09, GEN-10, BLG-01..BLG-12 (permission and validation checks)
+Prompt:
+Read the backend on develop, list every endpoint with its role guards, and write a permission-leak test
+checklist (guest, user vs user, moderator vs other provider, admin-only routes, account states, input
+validation). Then run the guest, user-on-admin-route and validation tests against the running API on a
+local in-memory MongoDB and log the results.
+How the output was used:
+Saved the checklist and run log as docs/qa/PERMISSION_TESTS.md; the tests were run through the Swagger page in the browser.
+Reported two bugs to their owners: P2 routes use a different error format from the global filter, and
+GET /api/hotels is not paginated (GEN-05).
+================================================
+
+================================================
+Date: 2026-11-11
+Student: Anas
+Tool: Cursor Grok
+Related Requirement: PAY-01, PAY-02, PAY-03, PAY-04, GEN-01, GEN-08, GEN-09, GEN-10
+Prompt:
+The team already implemented P1-P3 on develop and left P4 as stubs. Implement payments,
+notifications, uploads and reports for the travel platform. Match the hotel call to
+PaymentsService.createPayment and refundFor, and the flight contract in P2_INTEGRATION.md
+(paymentContext, applyVerifiedPayment, pendingEvents, pendingRefunds). Stripe test mode
+only, no card data stored. In-app notifications for confirmation, cancellation, refund,
+schedule changes and suspensions. JPG/PNG uploads up to 5 MB. Users report content once;
+admins dismiss, hide or delete it.
+How the output was used:
+Implemented the P4 modules on top of origin/develop: Stripe PaymentIntents and refunds,
+the webhook, policy acceptance, the flight outbox worker, notification storage, image
+upload limits, and report moderation. Wired hotel cancellation to an in-app notification
+and hid moderated reviews from the public hotel review list.
+================================================
+
+2026-11-13 P2 continuation after P4: User supplied feature/P4-payments-notifications-uploads-reports. Integrated via local fast-forward; added retrieved PaymentIntent ownership/amount/currency verification, current-outcome handling, durable flight notification deduplication, regression tests, and updated the merged-app mock and handoff. No push or production database operation.
+
+2026-11-13 P2 finalization: User requested completion, push and merge. Refreshed origin/develop (P2 already merged in PR #5 and P4 in PR #11). Added concurrent durable notification replay verification and preserved read state. Build, 48 unit/integration tests, one e2e test, and oxlint passed (five existing warnings). Prepared P2 payment-integration fixes for commit and publication into develop. Live Atlas and Stripe execution remain unverified.

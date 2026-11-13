@@ -102,20 +102,48 @@ find(@Param('id') id: string, @CurrentUser() user: JwtUser) { ... }
 | Service | Owner | Use |
 | --- | --- | --- |
 | `AuditService.log(actorId, action, targetType, targetId, meta?)` | P1 | every important admin/moderator action |
-| `NotificationsService.notify(userId, type, payload)` | P4 | booking confirmed, flight cancelled, report handled... |
-| `UploadsService.validateAndStore(file)` | P4 | activity and post images |
-| `PaymentsService.createPayment(...)`, `refundFor(...)` | P4 | flight and hotel bookings |
+| `NotificationsService.notify(userId, type, payload)` | P4 | booking confirmed, flight cancelled, refund, suspension |
+| `UploadsService.validateAndStore(file, { purpose, entityId, user })` | P4 | JPG/PNG, 5 MB, 5 images or 1 airline logo |
+| `PaymentsService.createPayment(...)`, `refundFor(...)` | P4 | hotel bookings; flights use the webhook and the P2 outbox |
 
-Booking modules register a payment handler once, so the Stripe webhook can confirm or fail bookings:
+Hotel bookings register a payment handler so the Stripe webhook can confirm or release a hold:
 
 ```ts
 onModuleInit() {
-  this.payments.registerHandler('flight', {
+  this.payments.registerHandler('hotel', {
     confirm: (bookingId, paymentId) => this.confirm(bookingId, paymentId),
-    fail: (bookingId) => this.failAndRelease(bookingId),
+    fail: (bookingId) => this.fail(bookingId),
   });
 }
 ```
+
+Flights do not use that handler. P4 verifies the Stripe webhook, then calls `BookingsService.applyVerifiedPayment`, and polls `pendingEvents()` / `pendingRefunds()`. See [P2 integration](backend/P2_INTEGRATION.md).
+
+## P4 payments, notifications, uploads, reports
+
+Stripe test mode only. Card numbers stay in Stripe Elements; the API stores the PaymentIntent id, amount, currency and status.
+
+| Method | Path | Requirement |
+| --- | --- | --- |
+| GET | `/api/bookings/:type/:id/policies` | PAY-02 |
+| POST | `/api/bookings/:type/:id/accept-policies` | PAY-02 |
+| POST | `/api/payments` | PAY-01. Body: `{ bookingType, bookingId }`. Amount is read from the booking |
+| POST | `/api/payments/:id/retry` | PAY-01. Same PaymentIntent until the 10-minute hold ends |
+| GET | `/api/payments/:id` | PAY-01, PAY-03 |
+| POST | `/api/payments/webhook` | PAY-01. Stripe signature, raw body |
+| GET | `/api/refunds/:id` | PAY-03. Status is `Pending`, `Refunded` or `Failed` |
+| GET | `/api/notifications` | GEN-01 |
+| GET | `/api/notifications/unread-count` | GEN-01 |
+| PATCH | `/api/notifications/:id/read` | GEN-01 |
+| POST | `/api/uploads?purpose=&entityId=` | GEN-08. Multipart field `file` |
+| POST | `/api/reports` | GEN-09 |
+| GET | `/api/admin/reports` | GEN-10 |
+| PATCH | `/api/admin/reports/:id` | GEN-10. `{ action: dismiss \| hide \| delete }` |
+| DELETE | `/api/admin/content/:type/:id` | GEN-10 |
+
+`bookingType` / `:type` on the payment routes is `flight` or `hotel`. Report content types are `post`, `comment`, `review` or `itinerary`. Upload purposes are `airline-logo`, `hotel`, `post` or `activity`.
+
+Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `PLATFORM_CURRENCY` in `backend/.env`. Forward Stripe test events with `stripe listen --forward-to localhost:3000/api/payments/webhook`.
 
 ## Git workflow
 
@@ -131,3 +159,7 @@ git push -u origin feature/FLT-11-flight-search
 - Never commit `.env`.
 - Only touch your own module folders; changes to `common/` or `app.module.ts` go through the team lead.
 - Log the AI prompts you used in `AI_PROMPTS.txt` with the requirement ID.
+
+## P2 airlines, flights and bookings
+
+See [integration contracts](backend/P2_INTEGRATION.md) and [review handoff](backend/P2_REVIEW.md).
