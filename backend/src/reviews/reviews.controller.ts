@@ -27,8 +27,9 @@ export class ReviewsController {
   findForHotel(
     @Param('hotelId', ParseObjectIdPipe) hotelId: string,
     @Query() query: ReviewQueryDto,
+    @CurrentUser() viewer?: JwtUser,
   ) {
-    return this.reviews.findForHotel(hotelId, query);
+    return this.reviews.findForHotel(hotelId, query, viewer);
   }
 
   @Roles(Role.USER)

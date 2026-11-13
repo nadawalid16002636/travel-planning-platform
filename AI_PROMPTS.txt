@@ -177,3 +177,23 @@ Saved the checklist and run log as docs/qa/PERMISSION_TESTS.md; the tests were r
 Reported two bugs to their owners: P2 routes use a different error format from the global filter, and
 GET /api/hotels is not paginated (GEN-05).
 ================================================
+
+================================================
+Date: 2026-11-11
+Student: Anas
+Tool: Cursor Grok
+Related Requirement: PAY-01, PAY-02, PAY-03, PAY-04, GEN-01, GEN-08, GEN-09, GEN-10
+Prompt:
+The team already implemented P1-P3 on develop and left P4 as stubs. Implement payments,
+notifications, uploads and reports for the travel platform. Match the hotel call to
+PaymentsService.createPayment and refundFor, and the flight contract in P2_INTEGRATION.md
+(paymentContext, applyVerifiedPayment, pendingEvents, pendingRefunds). Stripe test mode
+only, no card data stored. In-app notifications for confirmation, cancellation, refund,
+schedule changes and suspensions. JPG/PNG uploads up to 5 MB. Users report content once;
+admins dismiss, hide or delete it.
+How the output was used:
+Implemented the P4 modules on top of origin/develop: Stripe PaymentIntents and refunds,
+the webhook, policy acceptance, the flight outbox worker, notification storage, image
+upload limits, and report moderation. Wired hotel cancellation to an in-app notification
+and hid moderated reviews from the public hotel review list.
+================================================

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HotelsModule } from '../hotels/hotels.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import {
   HotelBooking,
   HotelBookingSchema,
@@ -14,6 +15,7 @@ import { HotelBookingsService } from './hotel-bookings.service.js';
 @Module({
   imports: [
     HotelsModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: HotelBooking.name, schema: HotelBookingSchema },
     ]),
