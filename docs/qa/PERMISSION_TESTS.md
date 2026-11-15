@@ -158,3 +158,39 @@ hidden posts are visible only to the author and admins (GEN-10), one like per us
 - After adding a room, `POST /api/hotel-bookings` always returns 409 "Room ... is unavailable for the selected dates". `POST .../availability` with
   `availabilityRanges` answers 400 "Provide dates to block or unblock", and `PATCH .../availability` answers 404 "Room not found" for the same room id.
   What's the intended way to make a new room bookable? If PATCH should find the room, it's a bug.
+
+## Run log 3: 15 Nov 2026, local in-memory DB, develop @ 7a4bc10 (after P4 merge)
+
+| # | Result | Notes |
+| --- | --- | --- |
+| Uploads: moderator → own hotel PNG | ✅ | 201, served publicly by URL |
+| Uploads: moderator → other hotel | ✅ | 403 |
+| Uploads: user → hotel photos | ✅ | 403 "Only the assigned hotel moderator can upload hotel photos" |
+| Uploads: text file renamed `.png`, GIF | ✅ | 400 "Only JPG and PNG images are accepted" (checks the real file bytes) |
+| Uploads: 6 MB file | ✅ | 413 "File too large" |
+| Uploads: 6th hotel image | ✅ | 400 "This hotel already has 5 images" (GEN-08) |
+| Uploads: user deletes someone else's file | ✅ | 403 |
+| Uploads: `../` path tricks on `/uploads/files/` | ✅ | 404 |
+| Payments: userB views / accepts policies / pays for userA's flight booking | ✅ | 403 "You do not own this booking" |
+| Flight booking: userB views userA's booking or e-ticket | ✅ | 403 |
+| Stripe webhook without signature | ✅ | 400 "Missing Stripe signature" (forged webhooks rejected) |
+| Reports: guest | ✅ | 401 |
+| Reports: moderator files a report | ✅ | 403 (only registered users report) |
+| Reports: user / moderator → admin report list or content delete | ✅ | 403 |
+| Reports: missing content, empty reason, unsupported type | ✅ | 404 / 400 / 400 |
+| Notifications: someone else's / unknown id | ✅ | 404 |
+| Payments: create a PaymentIntent | ⏳ | 503 "Stripe is not configured", needs a Stripe test key in `.env` |
+| Reports: once per item (GEN-09), admin resolve (GEN-10) | ⏳ | needs a post, comment, review or itinerary to exist (P5 / a completed hotel stay) |
+
+### Bugs found
+
+4. **Hotel rooms can't be found after they're created, so hotel booking is broken (HTL-03..HTL-15).** Steps: as admin, create a hotel and
+   `POST /api/hotels/{id}/rooms` → 201. Then `GET /api/hotels/{id}` shows `rooms: []`, `PATCH /api/hotels/{id}/rooms/{roomId}` and
+   `PATCH .../availability` → 404 "Room not found", and `POST /api/hotel-bookings` → 409 "unavailable".
+   **Cause (confirmed):** with `@nestjs/mongoose` 12 + Mongoose 9, `@Prop({ type: Types.ObjectId })` becomes a **Mixed** field, so a query like
+   `find({ hotelId: '<string id>' })` is no longer converted to an ObjectId and matches nothing. P2's code uses `SchemaTypes.ObjectId` and isn't affected.
+   **Fix:** replace `type: Types.ObjectId` with `type: SchemaTypes.ObjectId` (`import { SchemaTypes } from 'mongoose'`) in:
+   `hotels/entities/hotel-room.entity.ts` (2), `hotel-bookings/entities/hotel-booking.entity.ts` (3), `reviews/entities/review.entity.ts` (3),
+   `users/schemas/user.schema.ts` (1), `audit/schemas/audit-log.schema.ts` (1), `auth/schemas/session.schema.ts` (1).
+   Owners: P3 (hotels, bookings, reviews) and the lead (users, audit, sessions). `users.providerId` is also hit: `moderatorIdsFor()` queries it by
+   string, so it likely finds no moderators when an admin deactivates a provider.
