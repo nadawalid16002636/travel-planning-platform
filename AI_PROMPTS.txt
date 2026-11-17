@@ -217,3 +217,20 @@ login, moderators, holds, availability and payments) and a two-line hook in main
 the running API; all passed validation (remaining errors were expected ones: placeholder ids, Stripe not
 configured, and the hotel room bug already reported).
 ================================================
+
+================================================
+Date: 2026-11-17
+Student: Nada Nasreldin (P5)
+Tool: Cursor (Composer)
+Related Requirement: ITN-01..ITN-26, ITN-27/28 (bonus), BLG-01..BLG-12, BLG-13 (bonus), ITN-18 / FX
+Prompt:
+I am P5 (itineraries, posts, fx) on the travel-planning-platform GitHub repo. Do my part using
+the project PDF and the team split (P5 = itineraries, posts, fx). Implement against NestJS +
+MongoDB, keep ownership checks on the backend, wire FXRatesAPI daily cache for ITN-18, and
+attach activity/post images through the shared P4 GEN-08 upload service.
+How the output was used:
+Implemented the itineraries, posts and fx NestJS modules (schemas, DTOs, controllers, services,
+unit tests), budget conversion with cached FX rates, public search/clone, hotel/flight search
+hooks, blog CRUD/likes/comments/author page, and BLG-10/ITN-12 image attach/remove endpoints
+calling UploadsService. Synced with develop after P4 uploads landed; verified with vitest.
+================================================
