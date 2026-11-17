@@ -182,13 +182,23 @@ describe('FxRatesApiClient', () => {
   });
 
   it.each([
-    { 'US': 1 },
+    { US: 1 },
     { USDD: 1 },
     { 'U$D': 1 },
-  ])('rejects invalid currency codes in the rates map: %j', async (rates) => {
+  ])('treats a rates map of only invalid currency codes as empty: %j', async (rates) => {
     mockedFetch.mockResolvedValue(makeResponse({ ...validPayload(), rates }));
 
-    await expect(client.fetchLatestUsdDaily()).rejects.toThrow('invalid currency code');
+    await expect(client.fetchLatestUsdDaily()).rejects.toThrow('empty rates object');
+  });
+
+  it('skips non-ISO currency tickers such as OP while keeping valid rates', async () => {
+    mockedFetch.mockResolvedValue(
+      makeResponse({ ...validPayload(), rates: { OP: 1.2, EUR: 0.92, EGP: 49.5 } }),
+    );
+
+    await expect(client.fetchLatestUsdDaily()).resolves.toMatchObject({
+      rates: { USD: 1, EUR: 0.92, EGP: 49.5 },
+    });
   });
 
   it.each([0, -0.1, Number.NaN, Number.POSITIVE_INFINITY, 'NaN'])('rejects invalid rates: %j', async (rate) => {
