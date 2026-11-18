@@ -201,3 +201,36 @@ and hid moderated reviews from the public hotel review list.
 2026-11-13 P2 continuation after P4: User supplied feature/P4-payments-notifications-uploads-reports. Integrated via local fast-forward; added retrieved PaymentIntent ownership/amount/currency verification, current-outcome handling, durable flight notification deduplication, regression tests, and updated the merged-app mock and handoff. No push or production database operation.
 
 2026-11-13 P2 finalization: User requested completion, push and merge. Refreshed origin/develop (P2 already merged in PR #5 and P4 in PR #11). Added concurrent durable notification replay verification and preserved read state. Build, 48 unit/integration tests, one e2e test, and oxlint passed (five existing warnings). Prepared P2 payment-integration fixes for commit and publication into develop. Live Atlas and Stripe execution remain unverified.
+
+================================================
+Date: 2026-11-15
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: Milestone 1 Swagger documentation (all modules)
+Prompt:
+List every endpoint with a JSON request body that has no usable example in Swagger, and write ready-to-run
+request examples for all of them that pass the DTO validation and use the official reference data (cities,
+airports, countries). Add them without editing teammates' DTO files.
+How the output was used:
+Added backend/src/docs/swagger-examples.ts (examples for all 32 JSON request bodies, with named variants for
+login, moderators, holds, availability and payments) and a two-line hook in main.ts. Ran every example against
+the running API; all passed validation (remaining errors were expected ones: placeholder ids, Stripe not
+configured, and the hotel room bug already reported).
+================================================
+
+================================================
+Date: 2026-11-17
+Student: Nada Nasreldin (P5)
+Tool: Cursor (Composer)
+Related Requirement: ITN-01..ITN-26, ITN-27/28 (bonus), BLG-01..BLG-12, BLG-13 (bonus), ITN-18 / FX
+Prompt:
+I am P5 (itineraries, posts, fx) on the travel-planning-platform GitHub repo. Do my part using
+the project PDF and the team split (P5 = itineraries, posts, fx). Implement against NestJS +
+MongoDB, keep ownership checks on the backend, wire FXRatesAPI daily cache for ITN-18, and
+attach activity/post images through the shared P4 GEN-08 upload service.
+How the output was used:
+Implemented the itineraries, posts and fx NestJS modules (schemas, DTOs, controllers, services,
+unit tests), budget conversion with cached FX rates, public search/clone, hotel/flight search
+hooks, blog CRUD/likes/comments/author page, and BLG-10/ITN-12 image attach/remove endpoints
+calling UploadsService. Synced with develop after P4 uploads landed; verified with vitest.
+================================================
