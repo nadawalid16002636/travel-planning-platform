@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, SchemaTypes } from 'mongoose';
 
 export enum HotelBookingStatus {
   PENDING_PAYMENT = 'pending_payment',
@@ -13,7 +13,7 @@ export enum HotelBookingStatus {
 
 @Schema({ _id: false })
 export class BookedRoom {
-  @Prop({ type: Types.ObjectId, ref: 'HotelRoom', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'HotelRoom', required: true })
   roomId: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -54,10 +54,10 @@ export class HotelPolicySnapshot {
 
 @Schema({ timestamps: true })
 export class HotelBooking {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Hotel', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Hotel', required: true, index: true })
   hotelId: Types.ObjectId;
 
   @Prop({ type: [BookedRoom], required: true })
