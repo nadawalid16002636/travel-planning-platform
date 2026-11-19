@@ -196,4 +196,22 @@ Implemented the P4 modules on top of origin/develop: Stripe PaymentIntents and r
 the webhook, policy acceptance, the flight outbox worker, notification storage, image
 upload limits, and report moderation. Wired hotel cancellation to an in-app notification
 and hid moderated reviews from the public hotel review list.
+=================================================
+
+=================================================
+Date: 2026-11-19
+Student: Habiba
+Tool: Copilot SDK in VS Code
+Related Requirement: P3 - Hotels and Hotel Bookings
+Prompt:
+Check the current P3 hotel-booking implementation and repository state, identify
+integration or test failures, fix only issues found in the assigned work, and
+preserve existing teammate changes. Also append this P3 AI disclosure entry to
+the team log.
+How the output was used:
+Reviewed the P3 workspace state and fixed formatting and test integration issues
+in the hotel-bookings controller and P2 merged-app integration test. Verified the
+backend with the build, complete Vitest suite and lint. The complete test suite
+passed after the integration mock was corrected; lint passed with warnings only.
+External P1/P4/Atlas browser and live-database integration remains team-owned.
 ================================================
