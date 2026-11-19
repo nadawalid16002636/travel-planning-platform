@@ -24,15 +24,28 @@ const TITLES: Record<string, string> = {
 export class NotificationsService {
   constructor(@InjectModel(Notification.name) private readonly notifications: Model<Notification>) {}
 
-  async notify(userId: string, type: string, payload: Record<string, unknown> = {}): Promise<void> {
+  async notify(userId: string, type: string, payload: Record<string, unknown> = {}, sourceEventId?: string): Promise<void> {
     if (!userId) return;
-    await this.notifications.create({
+    const notification = {
       userId: String(userId),
       type,
       title: TITLES[type] ?? 'Notification',
       payload,
       read: false,
-    });
+    };
+    if (!sourceEventId) {
+      await this.notifications.create(notification);
+      return;
+    }
+    try {
+      await this.notifications.updateOne(
+        { sourceEventId },
+        { $setOnInsert: { ...notification, sourceEventId } },
+        { upsert: true },
+      ).exec();
+    } catch (error) {
+      if ((error as { code?: number }).code !== 11000) throw error;
+    }
   }
 
   async list(userId: string, query: PaginationQueryDto & { unread?: boolean }) {

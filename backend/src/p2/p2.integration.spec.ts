@@ -252,8 +252,8 @@ describe('P2 isolated MongoDB replica-set integration', () => {
     ]);
     const a = await api().get('/api/airports?code=CAI').expect(200);
     expect(a.body.total).toBe(1);
-    expect(a.body.items[0].officialId).toBe('test-cai');
-    expect(a.body.items[0].name).toBe('Synthetic Cairo');
+    expect(a.body.data[0].officialId).toBe('test-cai');
+    expect(a.body.data[0].name).toBe('Synthetic Cairo');
     await api().get('/api/airports?code=BADCODE').expect(400);
     await expect(
       app.get(AirportsService).importReference([
@@ -301,12 +301,12 @@ describe('P2 isolated MongoDB replica-set integration', () => {
     const res = await api().get('/api/flights/search').query(q).expect(200);
     expect(res.body.outbound.total).toBe(1);
     expect(res.body.inbound.total).toBe(1);
-    expect(res.body.outbound.items[0].availableSeats).toBe(3);
+    expect(res.body.outbound.data[0].availableSeats).toBe(3);
     const empty = await api()
       .get('/api/flights/search')
       .query({ ...q, minPriceMinor: 20000 })
       .expect(200);
-    expect(empty.body.outbound.items).toEqual([]);
+    expect(empty.body.outbound.data).toEqual([]);
     await api()
       .get('/api/flights/search')
       .query({ ...q, returnDate: undefined })
@@ -910,6 +910,18 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       merged.setGlobalPrefix('api');
       merged.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
       await merged.init();
+      const { NotificationsService } = await import('../notifications/notifications.service.js');
+      const notifications = merged.get(NotificationsService);
+      const mergedConnection = merged.get<Connection>(getConnectionToken());
+      const notificationModel = mergedConnection.model('Notification');
+      await notificationModel.init();
+      await Promise.all(Array.from({ length: 8 }, () =>
+        notifications.notify('test-owner', 'BOOKING_CONFIRMED', { bookingId: 'test-booking' }, 'test-outbox-event'),
+      ));
+      expect(await notificationModel.countDocuments({ sourceEventId: 'test-outbox-event' })).toBe(1);
+      await notifications.markAllRead('test-owner');
+      await notifications.notify('test-owner', 'BOOKING_CONFIRMED', {}, 'test-outbox-event');
+      expect(await notifications.unreadCount('test-owner')).toEqual({ count: 0 });
       const http = request(merged.getHttpServer());
       await http.get('/api/airports').expect(200);
       await http.get('/api/airlines').expect(401);

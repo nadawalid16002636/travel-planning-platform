@@ -22,7 +22,7 @@ rather than silently skip, if the replica set cannot start.
 Copy `.env.example` to `.env`, obtain the team URI securely, and run the
 insert-only airport importer described in [data/README.md](data/README.md).
 Then `npm run start:dev` serves Swagger at `http://localhost:3000/api/docs`.
-App startup requires Atlas connectivity. No extra API prefix is required.
+App startup requires Atlas connectivity. All HTTP endpoints use the `/api` prefix.
 The application retains the existing global ValidationPipe and Swagger setup.
 
 Atlas must support sessions and multi-document transactions. No standalone
@@ -52,7 +52,15 @@ GET /airports is registered once through P2; /reference/airports remains availab
 
 ## P4: payment, refund and notification integration
 
-P4 is absent. Import `P2Module` and inject `BookingsService`. There are no P2
+P4 is integrated locally from `feature/P4-payments-notifications-uploads-reports`
+(2026-11-13). PaymentsModule imports P2Module; its worker consumes flight events
+and refund requests every 15 seconds. Webhooks verify signatures, retrieve the
+current Stripe PaymentIntent and check its registered amount, currency and owner.
+Flight notifications use the event ID for durable deduplication. Build the new
+unique sparse notification index before enabling workers. Live Stripe test-mode
+and shared Atlas smoke tests remain pending.
+
+There are no P2
 HTTP endpoints that accept a client claim of payment success.
 
 1. Call `paymentContext(bookingId, verifiedPrincipal)` to obtain the authoritative

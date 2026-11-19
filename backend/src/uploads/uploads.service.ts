@@ -74,6 +74,18 @@ export class UploadsService {
     }
   }
 
+  /** Used by P5 when attaching/removing images on posts and activities. */
+  async get(fileId: string): Promise<StoredFile & { purpose: UploadPurpose; entityId: string }> {
+    const record = await this.uploads.findById(fileId).exec();
+    if (!record) throw new NotFoundException('File not found');
+    return {
+      id: String(record._id),
+      url: record.url,
+      purpose: record.purpose,
+      entityId: record.entityId,
+    };
+  }
+
   async remove(fileId: string, user?: JwtUser): Promise<void> {
     const record = await this.uploads.findById(fileId).exec();
     if (!record) throw new NotFoundException('File not found');

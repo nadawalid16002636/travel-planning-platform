@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
+import { applySwaggerExamples } from './docs/swagger-examples.js';
 
 async function bootstrap() {
   // rawBody is needed to verify Stripe webhook signatures (PAY-01)
@@ -19,7 +20,9 @@ async function bootstrap() {
     .setVersion('1.0')
     .addCookieAuth('access_token')
     .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config), {
+  // P6: ready-to-run request examples for every JSON body (backend/src/docs/swagger-examples.ts)
+  const document = applySwaggerExamples(SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { withCredentials: true, persistAuthorization: true },
   });
 
