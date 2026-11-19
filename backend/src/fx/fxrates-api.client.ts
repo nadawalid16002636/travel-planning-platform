@@ -155,9 +155,9 @@ export class FxRatesApiClient {
 
     const rates: Record<string, number> = {};
     for (const [rawCurrency, rate] of entries) {
-      if (!/^[A-Za-z]{3}$/.test(rawCurrency)) {
-        throw new BadGatewayException('FX provider returned an invalid currency code');
-      }
+      // Provider payloads can include non-ISO tickers (e.g. "OP"). Skip those
+      // instead of failing the whole daily snapshot used by ITN-18.
+      if (!/^[A-Za-z]{3}$/.test(rawCurrency)) continue;
       if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
         throw new BadGatewayException('FX provider returned an invalid rate');
       }
@@ -167,6 +167,9 @@ export class FxRatesApiClient {
         throw new BadGatewayException('FX provider returned duplicate currency codes');
       }
       rates[currency] = rate;
+    }
+    if (Object.keys(rates).length === 0) {
+      throw new BadGatewayException('FX provider returned an empty rates object');
     }
     return rates;
   }
