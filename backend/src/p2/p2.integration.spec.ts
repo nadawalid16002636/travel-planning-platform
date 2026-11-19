@@ -901,7 +901,10 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       let role = Role.ADMIN;
       const fixture = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(SessionsService).useValue({ authenticate: async () => authenticated ? { userId: '507f1f77bcf86cd799439011', sessionId: 'test' } : null })
-        .overrideProvider(UsersService).useValue({ registerDeactivationCheck: () => {}, findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }) })
+        .overrideProvider(UsersService).useValue({
+          findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }),
+          registerDeactivationCheck: () => undefined,
+        })
         .compile();
       merged = fixture.createNestApplication();
       merged.setGlobalPrefix('api');

@@ -456,3 +456,21 @@ Updated docs/qa/SWAGGER_WALKTHROUGH.md (Parts 9 and 10, demo seed shortcut, curr
 (environment variables table, "Demo and documentation" section). Ran the new itinerary steps against the API to
 confirm the endpoints, status codes and requirement IDs.
 ================================================
+
+================================================
+Date: 2026-11-19
+Student: Habiba
+Tool: Copilot SDK in VS Code
+Related Requirement: P3 - Hotels and Hotel Bookings
+Prompt:
+Check the current P3 hotel-booking implementation and repository state, identify
+integration or test failures, fix only issues found in the assigned work, and
+preserve existing teammate changes. Also append this P3 AI disclosure entry to
+the team log.
+How the output was used:
+Reviewed the P3 workspace state and fixed formatting and test integration issues
+in the hotel-bookings controller and P2 merged-app integration test. Verified the
+backend with the build, complete Vitest suite and lint. The complete test suite
+passed after the integration mock was corrected; lint passed with warnings only.
+External P1/P4/Atlas browser and live-database integration remains team-owned.
+================================================
