@@ -1,6 +1,6 @@
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { Types, SchemaTypes } from 'mongoose';
 import {
   ItineraryActivity,
   ItineraryActivitySchema,
@@ -21,7 +21,7 @@ export class ItineraryBookingAssociation {
   @Prop({ type: String, enum: ['flight'], required: true })
   type: 'flight';
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: SchemaTypes.ObjectId, required: true })
   bookingId: Types.ObjectId;
 }
 

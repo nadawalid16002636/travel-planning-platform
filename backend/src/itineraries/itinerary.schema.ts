@@ -1,6 +1,6 @@
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, SchemaTypes } from 'mongoose';
 
 import {
   ItineraryDay,
@@ -22,7 +22,7 @@ export class Itinerary {
   @Prop()
   description?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
   // Optional at schema level so legacy documents remain readable; new writes
@@ -59,10 +59,10 @@ export class Itinerary {
   budgetEntries: ItineraryBudget[];
 
   // Snapshot attribution keeps a clone credited even if its source is later removed.
-  @Prop({ type: Types.ObjectId })
+  @Prop({ type: SchemaTypes.ObjectId })
   clonedFromItineraryId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId })
+  @Prop({ type: SchemaTypes.ObjectId })
   clonedFromAuthorId?: Types.ObjectId;
 
   @Prop()

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, SchemaTypes } from 'mongoose';
 
 export type PostDocument = HydratedDocument<Post>;
 
@@ -12,7 +12,7 @@ export enum PostStatus {
 export class PostComment {
   _id?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   authorId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, minlength: 1, maxlength: 500 })
@@ -25,7 +25,7 @@ export const PostCommentSchema = SchemaFactory.createForClass(PostComment);
 export class Post {
   _id?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   authorId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, minlength: 1 })
@@ -34,7 +34,7 @@ export class Post {
   @Prop({ required: true, minlength: 1 })
   body: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Itinerary', default: undefined })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Itinerary', default: undefined })
   itineraryId?: Types.ObjectId;
 
   @Prop({ type: String, enum: PostStatus, default: PostStatus.DRAFT, index: true })

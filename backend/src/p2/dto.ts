@@ -150,8 +150,8 @@ export class SearchFlightsDto {
   @IsIn(['departure', 'duration', 'price-asc', 'price-desc'])
   sort = 'departure';
   @ApiPropertyOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
-  @ApiPropertyOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit =
-    20;
+  @ApiPropertyOptional({ default: 10 }) @Type(() => Number) @IsInt() @Min(1) @Max(100) limit =
+    10; // GEN-05: page size 10
 }
 export class LegDto {
   @ApiProperty() @IsMongoId() flightId: string;
@@ -203,8 +203,8 @@ export class CreateBookingDto {
 }
 export class PageDto {
   @ApiPropertyOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
-  @ApiPropertyOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit =
-    20;
+  @ApiPropertyOptional({ default: 10 }) @Type(() => Number) @IsInt() @Min(1) @Max(100) limit =
+    10; // GEN-05: page size 10
 }
 export class BookingQueryDto extends PageDto {
   @ApiPropertyOptional({ enum: ['upcoming', 'past', 'cancelled'] })

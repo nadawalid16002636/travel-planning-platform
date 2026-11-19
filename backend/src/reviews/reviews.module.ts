@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HotelBookingsModule } from '../hotel-bookings/hotel-bookings.module.js';
 import { HotelsModule } from '../hotels/hotels.module.js';
+import { UsersModule } from '../users/users.module.js';
 import { Review, ReviewSchema } from './entities/review.entity.js';
 import { ReviewsController } from './reviews.controller.js';
 import { ReviewsService } from './reviews.service.js';
@@ -10,6 +11,7 @@ import { ReviewsService } from './reviews.service.js';
   imports: [
     HotelBookingsModule,
     HotelsModule,
+    UsersModule,
     MongooseModule.forFeature([{ name: Review.name, schema: ReviewSchema }]),
   ],
   controllers: [ReviewsController],

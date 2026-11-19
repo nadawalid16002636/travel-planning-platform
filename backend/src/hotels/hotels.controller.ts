@@ -26,6 +26,7 @@ import {
   UpdateRoomAvailabilityDto,
 } from './dto/hotel-room.dto.js';
 import { HotelSearchDto } from './dto/hotel-search.dto.js';
+import { PaginationQueryDto } from '../common/pagination.dto.js';
 
 @Controller('hotels')
 @ApiTags('Hotels')
@@ -51,8 +52,8 @@ export class HotelsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'HTL-11: list active hotels' })
-  findAll() {
-    return this.hotelsService.findAll();
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.hotelsService.findAll(query);
   }
 
   @Public()

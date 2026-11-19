@@ -1,3 +1,4 @@
+import { paginate, PaginationQueryDto } from '../common/pagination.dto.js';
 import {
   BadRequestException,
   ConflictException,
@@ -138,10 +139,19 @@ export class HotelsService {
     return this.hotelModel.create(createHotelDto);
   }
 
-  findAll() {
-    return this.hotelModel
-      .find({ status: { $ne: HotelStatus.INACTIVE } })
-      .exec();
+  /** HTL-11, GEN-05: active hotels, paginated { data, page, limit, total } (page size 10). */
+  async findAll(query: PaginationQueryDto) {
+    const filter = { status: { $ne: HotelStatus.INACTIVE } };
+    const [data, total] = await Promise.all([
+      this.hotelModel
+        .find(filter)
+        .sort({ name: 1, _id: 1 })
+        .skip((query.page - 1) * query.limit)
+        .limit(query.limit)
+        .exec(),
+      this.hotelModel.countDocuments(filter),
+    ]);
+    return paginate(data, total, query);
   }
 
   async search(query: HotelSearchDto) {

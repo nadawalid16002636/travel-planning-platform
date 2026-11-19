@@ -1,3 +1,4 @@
+import { DELETED_USER_NAME, UsersService } from '../users/users.service.js';
 import {
   BadRequestException,
   ConflictException,
@@ -28,6 +29,7 @@ export class ReviewsService {
     private readonly bookingModel: Model<HotelBooking>,
     @InjectModel(Hotel.name)
     private readonly hotelModel: Model<Hotel>,
+    private readonly users: UsersService,
   ) {}
 
   async create(bookingId: string, user: JwtUser, dto: CreateReviewDto) {
@@ -99,7 +101,18 @@ export class ReviewsService {
         .exec(),
       this.reviewModel.countDocuments(filter).exec(),
     ]);
-    return { data, page: query.page, limit: query.limit, total };
+    // ACC-12, HTL-24: show who wrote each review; deactivated users appear as "Deleted user"
+    const reviewers = await this.users.basicInfo([...new Set(data.map((review) => String(review.userId)))]);
+    const nameById = new Map(reviewers.map((reviewer) => [reviewer.id, reviewer.name]));
+    return {
+      data: data.map((review) => ({
+        ...review.toObject(),
+        reviewer: { id: String(review.userId), name: nameById.get(String(review.userId)) ?? DELETED_USER_NAME },
+      })),
+      page: query.page,
+      limit: query.limit,
+      total,
+    };
   }
 
   findById(id: string) {

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, SchemaTypes } from 'mongoose';
 import { Role } from '../../common/roles.js';
 
 export enum AccountStatus {
@@ -38,7 +38,7 @@ export class User {
 
   /** Moderator assignment: exactly one airline or hotel (ACC-13). */
   @Prop({ type: String, enum: ProviderType }) providerType?: ProviderType;
-  @Prop({ type: Types.ObjectId }) providerId?: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId }) providerId?: Types.ObjectId;
 
   // Lockout + session invalidation (ACC-05, ACC-07a, ACC-08)
   @Prop({ default: 0, select: false }) failedLoginAttempts: number;

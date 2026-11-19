@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { Types, SchemaTypes } from 'mongoose';
 
 /**
  * ACC-06: one document per login. The refresh token is stored only as a SHA-256 hash.
@@ -7,7 +7,7 @@ import { Types } from 'mongoose';
  */
 @Schema({ timestamps: true })
 export class Session {
-  @Prop({ type: Types.ObjectId, required: true, index: true }) userId: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, required: true, index: true }) userId: Types.ObjectId;
   @Prop({ required: true, unique: true }) refreshTokenHash: string;
   @Prop({ required: true }) lastActivityAt: Date;
   @Prop({ required: true }) expiresAt: Date;

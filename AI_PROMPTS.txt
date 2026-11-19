@@ -382,3 +382,41 @@ Logged the results in docs/qa/PERMISSION_TESTS.md (run 3). Reported the root cau
 (@Prop type Types.ObjectId becomes Mixed under @nestjs/mongoose 12 + Mongoose 9) to P3 and the team lead with
 the list of affected fields.
 ================================================
+================================================
+Date: 2026-11-19
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: HTL-20, HTL-22, HTL-23
+Prompt:
+Fix the root cause reported by P6: with @nestjs/mongoose 12 and Mongoose 9, @Prop({ type: Types.ObjectId })
+becomes a Mixed field, so string ids from requests are stored as strings and later ObjectId lookups miss them
+(new hotel rooms could not be updated or booked). Replace it with SchemaTypes.ObjectId in every schema and
+verify the hotel flow.
+How the output was used:
+Changed the 9 affected schema files (audit log, session, hotel booking, hotel room, itinerary, itinerary day,
+post, review, user) to type: SchemaTypes.ObjectId; no other code changed and no Types.ObjectId schema types
+remain outside spec files. tsc passed, the app booted, and SchemaTypes was checked to be a runtime export of
+mongoose. Then tested as the admin against the running API: create hotel (cairo, EG) 201, add room 201,
+PATCH room availability for December 2026 200 (P6 reported 404 here before the fix),
+GET /api/hotels/{id}/reservations 200.
+Documents saved before the fix may still hold string ids and need a one-off migration.
+================================================
+================================================
+Date: 2026-11-19
+Student: Yassin (team lead)
+Tool: Claude + Claude Code
+Related Requirement: ACC-12, GEN-05, HTL-24, shared error format
+Prompt:
+Make the merged modules consistent before submission: hide posts and public itineraries of deactivated
+users and show their comments and reviews as "Deleted user" (ACC-12), show the reviewer on hotel reviews
+(HTL-24), return every list as { data, page, limit, total } with page size 10 (GEN-05), and use the
+global error format { statusCode, message, path, timestamp } everywhere.
+How the output was used:
+Applied the fixes to 18 files: UsersService.deactivatedUserIds / isDeactivated and "Deleted user" in
+basicInfo; posts, itineraries and reviews filter or relabel deactivated authors; hotels, airlines,
+airports, flights and flight-bookings lists use the shared pagination shape with page size 10; the P2
+error filter was removed so P2 errors use the global format. tsc passed and all 19 test files (274 tests)
+passed with vitest. Checked against the running API: GET /api/hotels returns { data, page, limit, total },
+a guest GET /api/flight-bookings returns 401 with path and timestamp, and P2 errors (invalid flight id,
+unknown airport) now use the same format.
+================================================

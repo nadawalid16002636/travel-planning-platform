@@ -447,7 +447,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
         .lean(),
       this.bookings.countDocuments(filter),
     ]);
-    return { items, total, page: q.page, limit: q.limit };
+    return { data: items, total, page: q.page, limit: q.limit }; // GEN-05 list shape
   }
   async get(id: string, user: P2Principal) {
     this.access.customer(user);
@@ -738,7 +738,7 @@ export class BookingsService implements OnModuleInit, OnModuleDestroy {
         .lean(),
       this.bookings.countDocuments(filter),
     ]);
-    return { items, total, page: q.page, limit: q.limit };
+    return { data: items, total, page: q.page, limit: q.limit }; // GEN-05 list shape
   }
   async exportPassengers(id: string, user: P2Principal) {
     const f = await this.flights.get(id);

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types, SchemaTypes } from 'mongoose';
 
 export enum RoomReservationStatus {
   PENDING_PAYMENT = 'pending_payment',
@@ -8,7 +8,7 @@ export enum RoomReservationStatus {
 
 @Schema({ _id: false })
 export class RoomReservation {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: SchemaTypes.ObjectId, required: true })
   bookingId: Types.ObjectId;
 
   @Prop({ type: Date, required: true })
