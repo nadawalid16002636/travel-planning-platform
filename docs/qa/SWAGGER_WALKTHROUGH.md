@@ -41,7 +41,7 @@ Log in: `POST /api/auth/login` → example **admin**.
 | 2.5 | `POST /api/hotels` | Create a hotel (HTL-01). Save `hotelId` | 201 |
 | 2.6 | `PUT /api/hotels/{id}/policies` | Check-in times and refund tiers (HTL-09, HTL-10) | 200 |
 | 2.7 | `POST /api/hotels/{id}/rooms` | Add a room (HTL-03). Save `roomId` | 201 |
-| 2.8 | `PATCH /api/hotels/{id}/rooms/{roomId}/availability` → example **open** | Open the room for booking (HTL-04) | 200 ⚠️ currently 404, see "Known issues" |
+| 2.8 | `PATCH /api/hotels/{id}/rooms/{roomId}/availability` → example **open** | Open the room for booking (HTL-04) | 200 |
 | 2.9 | `POST /api/admin/moderators` → example **hotel** (`providerId` = `hotelId`) | Moderator account (ACC-13) | 201 |
 | 2.10 | `POST /api/admin/moderators` → example **airline** (`providerId` = `airlineId`) | | 201 |
 
@@ -84,7 +84,7 @@ Log out, log in → example **traveler** (the account from step 1.4).
 `backend/.env`, run `stripe listen --forward-to localhost:3000/api/payments/webhook`, then
 `stripe payment_intents confirm <pi_... id> --payment-method pm_card_visa`.
 
-## Part 5: Traveler books a hotel ⚠️ blocked until the room bug is fixed
+## Part 5: Traveler books a hotel
 
 | Step | Request | What it shows | Expect |
 | --- | --- | --- | --- |
@@ -133,11 +133,10 @@ Log out, log in → example **admin**.
 
 ## Not covered yet
 
-- **Blog (BLG-01..12), itineraries and currency conversion (ITN):** the P5 modules are still empty on `develop`.
+- **Blog (BLG-01..12), itineraries and currency conversion (ITN):** these flows are outside this walkthrough.
 - **Reports once per item (GEN-09):** needs a post, comment, review or itinerary to report.
 
 ## Known issues (see docs/qa/PERMISSION_TESTS.md)
 
-- New hotel rooms can't be found after creation (`@Prop({ type: Types.ObjectId })` becomes Mixed), which blocks steps 2.8 and Part 5.
 - P2 error responses and `GET /api/flight-bookings` use a different shape from the rest of the API.
 - `GET /api/hotels` is not paginated.
