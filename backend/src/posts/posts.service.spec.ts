@@ -22,6 +22,8 @@ describe('PostsService', () => {
   const users = {
     findById: vi.fn(),
     basicInfo: vi.fn(),
+    isDeactivated: vi.fn().mockResolvedValue(false),
+    deactivatedUserIds: vi.fn().mockResolvedValue([]),
   };
   const itineraries = {
     findPublicByAuthor: vi.fn(),
@@ -120,7 +122,7 @@ describe('PostsService', () => {
     users.basicInfo.mockResolvedValue([{ id: String(authorId), name: 'Author', email: 'private@example.test' }]);
 
     const response = await service.browsePublished({ page: 2, limit: 5, tag: ' Cairo ' } as any);
-    expect(model.find).toHaveBeenCalledWith({ status: 'published', tags: 'cairo' });
+    expect(model.find).toHaveBeenCalledWith({ status: 'published', authorId: { $nin: [] }, tags: 'cairo' });
     expect(result.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(result.skip).toHaveBeenCalledWith(5);
     expect(response.data[0]).toMatchObject({ likeCount: 1, commentCount: 2, author: { name: 'Author' } });
@@ -132,7 +134,7 @@ describe('PostsService', () => {
     model.aggregate = vi.fn().mockResolvedValue([{ data: [], total: [] }]);
     const response = await service.searchPublished({ keyword: 'cairo', tag: 'Travel', page: 2, limit: 10 } as any);
     const pipeline = model.aggregate.mock.calls[0][0];
-    expect(pipeline[0]).toEqual({ $match: { status: 'published' } });
+    expect(pipeline[0]).toEqual({ $match: { status: 'published', authorId: { $nin: [] } } });
     expect(pipeline).toContainEqual({ $match: { tags: 'travel' } });
     expect(pipeline).toContainEqual(expect.objectContaining({ $match: expect.objectContaining({ $or: expect.arrayContaining([
       expect.objectContaining({ title: expect.any(RegExp) }),
@@ -301,6 +303,18 @@ describe('PostsService', () => {
     expect(await service.like(String(post._id), user)).toMatchObject({ liked: true, likeCount: 1 });
     expect(model.findOneAndUpdate.mock.calls[0][1]).toEqual({ $addToSet: { likes: expect.any(Types.ObjectId) } });
     expect(await service.unlike(String(post._id), user)).toMatchObject({ liked: false, likeCount: 0 });
+  });
+
+  it('ACC-12: hides the author page and posts of a deactivated user', async () => {
+    users.isDeactivated.mockResolvedValueOnce(true);
+    await expect(service.authorPage(user.sub, { page: 1, limit: 10 } as any)).rejects.toBeInstanceOf(NotFoundException);
+    users.deactivatedUserIds.mockResolvedValueOnce([new Types.ObjectId(user.sub)]);
+    const model = (service as any).postModel;
+    model.find = vi.fn().mockReturnValue(chain([]));
+    model.countDocuments = vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(0) });
+    users.basicInfo.mockResolvedValue([]);
+    await service.browsePublished({ page: 1, limit: 10 } as any);
+    expect(model.find.mock.calls.at(-1)[0].authorId).toEqual({ $nin: [new Types.ObjectId(user.sub)] });
   });
 
   it('builds a public author page with only published posts and public itinerary summaries', async () => {

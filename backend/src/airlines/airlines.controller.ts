@@ -1,3 +1,4 @@
+import { PaginationQueryDto } from '../common/pagination.dto.js';
 import { Public } from '../common/decorators.js';
 import {
   Body,
@@ -8,8 +9,8 @@ import {
   Post,
   Put,
   Req,
+  Query,
   UseGuards,
-  UseFilters,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
@@ -23,10 +24,8 @@ import { UpdateAirlineDto } from './dto/update-airline.dto.js';
 import { UpdateBaggagePolicyDto } from './dto/update-baggage-policy.dto.js';
 import { CancellationPolicyDto } from '../p2/dto.js';
 import { P2Access } from '../p2/access.js';
-import { P2ErrorFilter } from '../p2/errors.js';
 
 @ApiTags('Airlines')
-@UseFilters(P2ErrorFilter)
 @ApiResponse({ status: 400, description: 'Invalid airline input' })
 @ApiResponse({
   status: 401,
@@ -56,9 +55,9 @@ export class AirlinesController {
   @UseGuards(P2Access)
   @ApiCookieAuth()
   @ApiOperation({ summary: 'FLT-01: List airlines (administrator)' })
-  findAll(@Req() req: any) {
+  findAll(@Req() req: any, @Query() query: PaginationQueryDto) {
     this.access.manage(req.p2Principal);
-    return this.airlinesService.findAll();
+    return this.airlinesService.findAll(query);
   }
   @Public()
   @Get(':id')

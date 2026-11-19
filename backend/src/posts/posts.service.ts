@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { UsersService } from '../users/users.service.js';
+import { DELETED_USER_NAME, UsersService } from '../users/users.service.js';
 import { ItinerariesService } from '../itineraries/itineraries.service.js';
 import { UploadsService } from '../uploads/uploads.service.js';
 import type { JwtUser } from '../common/roles.js';
@@ -42,7 +42,10 @@ export class PostsService {
   }
 
   async browsePublished(query: PostBrowseQueryDto) {
-    const filter: Record<string, unknown> = { status: PostStatus.PUBLISHED };
+    const filter: Record<string, unknown> = {
+      status: PostStatus.PUBLISHED,
+      authorId: { $nin: await this.users.deactivatedUserIds() }, // ACC-12
+    };
     if (query.tag?.trim()) filter.tags = this.normalizeTag(query.tag);
     const [posts, total] = await Promise.all([
       this.postModel
@@ -59,7 +62,8 @@ export class PostsService {
 
   async searchPublished(query: PostSearchQueryDto) {
     const stages: Record<string, unknown>[] = [
-      { $match: { status: PostStatus.PUBLISHED } },
+      // ACC-12: posts of deactivated users are hidden
+      { $match: { status: PostStatus.PUBLISHED, authorId: { $nin: await this.users.deactivatedUserIds() } } },
       {
         $addFields: {
           likeCount: { $size: { $ifNull: ['$likes', []] } },
@@ -195,6 +199,7 @@ export class PostsService {
     if (post.status !== PostStatus.PUBLISHED && (!user || String(post.authorId) !== user.sub)) {
       throw new NotFoundException('Post not found');
     }
+    if (await this.users.isDeactivated(String(post.authorId))) throw new NotFoundException('Post not found'); // ACC-12
     const author = await this.users.findById(String(post.authorId));
     const sortedComments = [...(post.comments ?? [])].sort((left: any, right: any) => {
       const byDate = new Date(left.createdAt ?? 0).getTime() - new Date(right.createdAt ?? 0).getTime();
@@ -228,7 +233,7 @@ export class PostsService {
         updatedAt: comment.updatedAt,
         author: {
           id: String(comment.authorId),
-          name: authorById.get(String(comment.authorId)) ?? 'Unknown author',
+          name: authorById.get(String(comment.authorId)) ?? DELETED_USER_NAME, // ACC-12
         },
       })),
       commentsPage: commentsQuery.page,
@@ -368,6 +373,7 @@ export class PostsService {
 
   async authorPage(authorId: string, query: MyPostsQueryDto) {
     const id = this.parseId(authorId, 'author');
+    if (await this.users.isDeactivated(id.toString())) throw new NotFoundException('Author not found'); // ACC-12
     const author = await this.users.findById(id.toString());
     const [posts, itineraries] = await Promise.all([
       this.listPublishedByAuthor(id, query),
@@ -432,6 +438,7 @@ export class PostsService {
     const post = await this.postModel.findOne({
       _id: this.parseId(id, 'post'),
       status: PostStatus.PUBLISHED,
+      authorId: { $nin: await this.users.deactivatedUserIds() }, // ACC-12
     }).exec();
     if (!post) throw new NotFoundException('Published post not found');
     return post;

@@ -37,7 +37,7 @@ export class AirportsService {
       this.airports.countDocuments(filter),
     ]);
     const data = items.map((item) => this.normalize(item));
-    return { data, items: data, total, page: query.page, limit: query.limit };
+    return { data, total, page: query.page, limit: query.limit };
   }
   async byCode(code: string): Promise<AirportReference> {
     if (!/^[A-Z]{3}$/.test(code))

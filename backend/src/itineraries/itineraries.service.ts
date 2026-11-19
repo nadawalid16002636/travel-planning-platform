@@ -789,6 +789,8 @@ export class ItinerariesService {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new BadRequestException('Invalid public itinerary pagination');
     }
+    // ACC-12: public itineraries of a deactivated user are hidden
+    if (await this.usersService.isDeactivated(authorId)) return { data: [], page, limit, total: 0 };
     const filter = { userId: new Types.ObjectId(authorId), visibility: 'public' };
     const [documents, total] = await Promise.all([
       this.itineraryModel
@@ -992,7 +994,7 @@ export class ItinerariesService {
     let total = Number.POSITIVE_INFINITY;
     while ((page - 1) * limit < total) {
       const result = await this.airports.find({ city: cityId, page, limit } as any);
-      const data = result.data ?? result.items ?? [];
+      const data = result.data ?? [];
       total = result.total ?? data.length;
       airports.push(...data);
       page += 1;
@@ -1039,7 +1041,10 @@ export class ItinerariesService {
       clauses.push({ $expr: comparisons.length === 1 ? comparisons[0] : { $and: comparisons } });
     }
 
-    const filter: Record<string, unknown> = { visibility: 'public' };
+    const filter: Record<string, unknown> = {
+      visibility: 'public',
+      userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
+    };
     if (clauses.length) filter.$and = clauses;
     const [documents, total] = await Promise.all([
       this.itineraryModel
@@ -1150,7 +1155,11 @@ export class ItinerariesService {
   async findPublicSummaryById(id: string) {
     if (!Types.ObjectId.isValid(id)) return null;
     const itinerary: any = await this.itineraryModel
-      .findOne({ _id: new Types.ObjectId(id), visibility: 'public' })
+      .findOne({
+        _id: new Types.ObjectId(id),
+        visibility: 'public',
+        userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
+      })
       .select('_id title countryCodes startDate days.order days.cityId updatedAt')
       .lean()
       .exec();
@@ -1227,7 +1236,11 @@ export class ItinerariesService {
   private async findPublicItinerary(id: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid itinerary ID');
     const itinerary = await this.itineraryModel
-      .findOne({ _id: new Types.ObjectId(id), visibility: 'public' })
+      .findOne({
+        _id: new Types.ObjectId(id),
+        visibility: 'public',
+        userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
+      })
       .exec();
     if (!itinerary) throw new NotFoundException('Public itinerary not found');
     return itinerary;
