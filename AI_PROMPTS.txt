@@ -420,3 +420,16 @@ passed with vitest. Checked against the running API: GET /api/hotels returns { d
 a guest GET /api/flight-bookings returns 401 with path and timestamp, and P2 errors (invalid flight id,
 unknown airport) now use the same format.
 ================================================
+
+================================================
+Date: 2026-11-19
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: BLG-01..BLG-12, ACC-10, GEN-09, GEN-10, ITN (privacy and clone)
+Prompt:
+Run permission and validation tests on the newly merged P5 modules (posts, itineraries) and re-check the
+four bugs reported earlier, against the running API on a local in-memory MongoDB.
+How the output was used:
+Logged the results in docs/qa/PERMISSION_TESTS.md (run 4): the four earlier bugs are fixed; reported two new
+bugs to P4/P5 (hidden posts and itineraries stay public; comments can't be reported).
+================================================
