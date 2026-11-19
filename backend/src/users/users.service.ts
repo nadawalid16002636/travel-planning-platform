@@ -152,7 +152,8 @@ export class UsersService implements OnApplicationBootstrap {
   }
 
   /** Name + email for lists that show who a record belongs to (e.g. ACC-17). */
-  async basicInfo(ids: string[]) {
+  /** `showDeactivated`: admin views (ACC-17) keep the real name; public pages show "Deleted user". */
+  async basicInfo(ids: string[], showDeactivated = false) {
     if (!ids.length) return [];
     const docs = await this.userModel
       .find({ _id: { $in: ids } })
@@ -161,7 +162,10 @@ export class UsersService implements OnApplicationBootstrap {
     return docs.map((u) => ({
       id: String(u._id),
       // ACC-12: content written by a deactivated user is attributed to "Deleted user"
-      name: u.status === AccountStatus.DEACTIVATED ? DELETED_USER_NAME : `${u.firstName} ${u.lastName}`.trim(),
+      name:
+        u.status === AccountStatus.DEACTIVATED && !showDeactivated
+          ? DELETED_USER_NAME
+          : `${u.firstName} ${u.lastName}`.trim(),
       email: u.email,
     }));
   }

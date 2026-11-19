@@ -105,7 +105,7 @@ export class AdminBookingsService implements OnModuleInit {
     const hotelModel = this.providers.model('Hotel');
 
     const [users, flightDocs, hotelDocs] = await Promise.all([
-      this.users.basicInfo(userIds),
+      this.users.basicInfo(userIds, true), // admins see who the customer was, even if deactivated
       flightModel && flightIds.length
         ? flightModel.find({ _id: { $in: flightIds } }).select('airlineId').lean<any[]>()
         : [],
