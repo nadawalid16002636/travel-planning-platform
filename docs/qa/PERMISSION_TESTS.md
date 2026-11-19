@@ -194,3 +194,5 @@ hidden posts are visible only to the author and admins (GEN-10), one like per us
    `users/schemas/user.schema.ts` (1), `audit/schemas/audit-log.schema.ts` (1), `auth/schemas/session.schema.ts` (1).
    Owners: P3 (hotels, bookings, reviews) and the lead (users, audit, sessions). `users.providerId` is also hit: `moderatorIdsFor()` queries it by
    string, so it likely finds no moderators when an admin deactivates a provider.
+
+Follow-up: PR #21 corrected ObjectId casting for the hotel room schema on `develop`. The results above describe run 3 at its recorded commit.
