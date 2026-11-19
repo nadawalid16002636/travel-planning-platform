@@ -133,17 +133,14 @@ Tool: Claude
 =========================================================================================
 
 ================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-07 (work began 2026-11-02)
-Student role: P2 - Airlines, Flights, Flight Bookings
-AI tool: Codex
-Related requirements: FLT-01, FLT-02, FLT-03, FLT-04, FLT-05, FLT-06,
+Student: Nada Walid (P2, airlines, flights and flight bookings)
+Tool: Codex
+Related Requirement: FLT-01, FLT-02, FLT-03, FLT-04, FLT-05, FLT-06,
 FLT-08, FLT-09, FLT-11, FLT-12, FLT-15, FLT-17, FLT-19, FLT-21,
 FLT-22, FLT-23, FLT-25, FLT-26, FLT-29, FLT-30; integration dependencies
 ACC-11, ACC-13, PAY-01, PAY-02, PAY-03, GEN-01, GEN-06, GEN-11.
-Prompt summary:
+Prompt:
 Implement the assigned P2 backend in the existing NestJS/MongoDB/TypeScript
 workspace, preserving teammate code and shared records; inspect official
 requirements, complete airline policies, airports, flights, searches, atomic
@@ -153,7 +150,7 @@ Additional user material:
 Four local Mock Data workbooks and desc.pdf were supplied. The PDF linked the
 official requirements workbook, which was retrieved and used to replace initial
 provisional designs with exact passenger, baggage, cancellation and hold rules.
-How the AI output was reviewed and used:
+How the output was used:
 Codex inspected existing code and Git changes, implemented the P2 modules,
 reviewed the requirement text, and exercised the implementation with unit,
 HTTP and real ephemeral MongoDB replica-set tests. A generated PDF ticket was
@@ -167,14 +164,14 @@ No commit, push, PR, merge, collection deletion or database reset was performed.
 =========================================================================================
 
 ================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-2026-11-07 continuation: User requested installation of GitHub CLI, then explicit
-push and merge of P2. Codex reconciled with develop, retained the newer NestJS/ESM
-setup and teammates' auth/hotels, adapted tests to Vitest, wired verified P1 session
-mapping and shared airport schema, and verified build/tests/lint before publication.
+Date: 2026-11-07
+Student: Nada Walid (P2, airlines, flights and flight bookings)
+Tool: Codex
+Related Requirement: P2 integration and publication
+Prompt:
+Install GitHub CLI, then push and merge the P2 work.
+How the output was used:
+Codex reconciled the branch with develop, kept the newer NestJS/ESM setup and teammate modules, adapted tests to Vitest, and wired P1 sessions and the shared airport schema. Build, tests and lint passed before publication.
 
 =========================================================================================
 
@@ -294,13 +291,25 @@ and hid moderated reviews from the public hotel review list.
 =========================================================================================
 
 ================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
+Date: 2026-11-13
+Student: Nada Walid (P2, airlines, flights and flight bookings)
+Tool: Codex
+Related Requirement: PAY-01, PAY-03, GEN-01
+Prompt:
+Integrate P2 with feature/P4-payments-notifications-uploads-reports.
+How the output was used:
+Integrated locally by fast-forward. Added retrieved PaymentIntent ownership, amount and currency checks, current-outcome handling, durable flight notification deduplication and regression tests. Updated the merged-app mock and handoff. No push or production database operation was performed.
+================================================
 
-2026-11-13 P2 continuation after P4: User supplied feature/P4-payments-notifications-uploads-reports. Integrated via local fast-forward; added retrieved PaymentIntent ownership/amount/currency verification, current-outcome handling, durable flight notification deduplication, regression tests, and updated the merged-app mock and handoff. No push or production database operation.
-
-2026-11-13 P2 finalization: User requested completion, push and merge. Refreshed origin/develop (P2 already merged in PR #5 and P4 in PR #11). Added concurrent durable notification replay verification and preserved read state. Build, 48 unit/integration tests, one e2e test, and oxlint passed (five existing warnings). Prepared P2 payment-integration fixes for commit and publication into develop. Live Atlas and Stripe execution remain unverified.
+================================================
+Date: 2026-11-13
+Student: Nada Walid (P2, airlines, flights and flight bookings)
+Tool: Codex
+Related Requirement: PAY-01, GEN-01
+Prompt:
+Complete the P2 payment integration and prepare it for push and merge.
+How the output was used:
+Refreshed origin/develop, where PRs #5 and #11 were already merged. Verified concurrent notification replay and preservation of read state. The build, 48 unit and integration tests, one end-to-end test and oxlint passed with five existing warnings. Prepared the fixes for publication. Live Atlas and Stripe execution remained unverified.
 
 =========================================================================================
 
