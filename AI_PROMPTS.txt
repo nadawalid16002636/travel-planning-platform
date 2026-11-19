@@ -368,3 +368,17 @@ calling UploadsService. Synced with develop after P4 uploads landed; verified wi
 Date: 2026-11-15
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
+
+================================================
+Date: 2026-11-15
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: GEN-08, GEN-09, GEN-10, PAY-01, PAY-02, HTL-03..HTL-15
+Prompt:
+Run permission and validation tests on the newly merged P4 modules (uploads, payments, reports, notifications)
+against the running API on a local in-memory MongoDB, and find out why new hotel rooms can't be updated or booked.
+How the output was used:
+Logged the results in docs/qa/PERMISSION_TESTS.md (run 3). Reported the root cause of the hotel room bug
+(@Prop type Types.ObjectId becomes Mixed under @nestjs/mongoose 12 + Mongoose 9) to P3 and the team lead with
+the list of affected fields.
+================================================
