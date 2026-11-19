@@ -196,3 +196,45 @@ hidden posts are visible only to the author and admins (GEN-10), one like per us
    string, so it likely finds no moderators when an admin deactivates a provider.
 
 Follow-up: PR #21 corrected ObjectId casting for the hotel room schema on `develop`. The results above describe run 3 at its recorded commit.
+
+## Run log 4: 19 Nov 2026, local in-memory DB, develop @ 42bd367 (after P5 merge and the fix batch)
+
+### Earlier bugs re-checked
+
+| Bug | Status |
+| --- | --- |
+| 1. P2 error format | ✅ fixed: P2 routes now return `{ statusCode, message, path, timestamp }` |
+| 2. `GET /api/hotels` not paginated | ✅ fixed: returns `{ data, page, limit, total }` |
+| 3. `GET /api/flight-bookings` uses `items` | ✅ fixed: returns `data` |
+| 4. Hotel rooms not found (`Types.ObjectId` → Mixed) | ✅ fixed: the hotel shows its rooms, availability can be opened, available rooms are listed. Booking a room now reaches payment (503 until Stripe is configured locally) |
+
+### Blog (BLG) and itineraries (ITN)
+
+| # | Result | Notes |
+| --- | --- | --- |
+| BLG-01 | ✅ | publish and draft; empty title → 400 |
+| BLG-02 | ✅ | guest list and post page with title, author, date, body, tags, likes, comments; drafts → 404 for guests and other users |
+| BLG-03 | ✅ | `/posts/mine` lists drafts with like and comment counts |
+| BLG-04 | ✅ | other user editing or deleting a post (published or draft) → 403; author edit → 200 |
+| BLG-05 | ✅ | comment 201; empty, spaces only, 501 chars → 400; comment on a draft → 404 |
+| BLG-06 | ✅ | like twice → count stays 1; unlike → 0; like a draft → 404 |
+| BLG-07 | ✅ | other user editing or deleting a comment → 403; own edit → 200 |
+| BLG-08 | ✅ | 6 tags or a 31-character tag → 400; `?tag=` filter works |
+| BLG-09 | ✅ | search by title, tag and author name; drafts not found; "no results" message; ordered by likes + comments |
+| BLG-12 | ✅ | author page with name, join date, posts |
+| ACC-10 | ✅ | guest like, comment or create → 401 |
+| GEN-09 | ✅ | reporting the same post twice → 409 "You have already reported this" |
+| ITN privacy | ✅ | other user opening, editing, adding days or exporting a private itinerary → 403; private itinerary via the public route → 404 |
+| ITN clone | ✅ | public itinerary clones into the other user's private list; cloning a private one → 404 |
+| ITN reference data | ✅ | unknown city → 404 "Unknown city" |
+
+### Bugs found
+
+5. **Hidden content stays public (GEN-10: "Hidden content is visible only to its author and admins").** Admin resolves a report with
+   `{ action: 'hide' }` → 200, but the post is still returned to guests by `GET /api/posts/{id}` and listed in `GET /api/posts`.
+   Same for itineraries: `GET /api/itineraries/public/{id}` and `/api/itineraries/public` still show a hidden itinerary.
+   Cause: `reports.service` sets `hidden: true` on the document (and offers `visibility()`), but `posts.service` and `itineraries.service`
+   only filter on `status` / `visibility`, never on `hidden`. Owners: P5 (filter hidden content), with P4.
+6. **Comments can't be reported or moderated (GEN-09, GEN-10).** `POST /api/reports` with `targetType: 'comment'` and a real comment id
+   → 404 "Content not found"; `DELETE /api/admin/content/comment/{id}` → 404 too. Cause: comments are embedded inside posts
+   (`posts.comments`), but `reports.service` looks for them in a separate `comments` collection. Owners: P4 and P5.

@@ -13,8 +13,9 @@ next part needs. Every request body is already filled in by its Swagger example 
 - **Switching roles:** call `POST /api/auth/logout`, then log in as the next account.
 - **Ids:** copy the `_id` (or `id`) from a response and paste it into the next request's path or body. Keep a notepad
   open with these: `airlineId`, `flightId`, `hotelId`, `roomId`, `holdId`, `bookingId`, `paymentId`.
-- **Errors** all use one shape: `{ statusCode, message, path, timestamp }` (P2 routes still differ, see the QA log).
+- **Errors** all use one shape: `{ statusCode, message, path, timestamp }`.
 - **Test accounts:** use `@test.local` emails if you create extra accounts; `npm run cleanup:test -- --apply` removes them.
+- **Shortcut:** `npm run seed:demo` (in `backend/`) creates 3 airlines, 3 hotels with bookable rooms, moderators and travelers, all with the password `Demo@12345`. Use it to skip Part 2 when you only need data to browse and book.
 
 ---
 
@@ -90,7 +91,7 @@ Log out, log in → example **traveler** (the account from step 1.4).
 | --- | --- | --- | --- |
 | 5.1 | `GET /api/hotels/search?city=cairo&checkIn=2026-12-20&checkOut=2026-12-23&guests=2` | Search (HTL-11, HTL-12) | 200, the hotel from 2.5 |
 | 5.2 | `GET /api/hotels/{hotelId}/rooms/available?checkIn=2026-12-20&checkOut=2026-12-23` | Rooms and total price (HTL-15) | 200 |
-| 5.3 | `POST /api/hotel-bookings` (`hotelId`, `roomId`) | Booking (HTL-16) | 201 |
+| 5.3 | `POST /api/hotel-bookings` (`hotelId`, `roomId`) | Booking (HTL-16) | 201 (503 if no Stripe key) |
 | 5.4 | `POST /api/payments` → example **hotel** | Payment | 201 |
 | 5.5 | `GET /api/hotel-bookings` | Upcoming / past / cancelled lists | 200 |
 
@@ -131,12 +132,65 @@ Log out, log in → example **admin**.
 | Upload rules (GEN-08) | `POST /api/uploads` with a GIF, or a file over 5 MB | 400 / 413 |
 | Forged payment webhook | `POST /api/payments/webhook` without a Stripe signature | 400 |
 
-## Not covered yet
+## Part 9: Blog (BLG)
 
-- **Blog (BLG-01..12), itineraries and currency conversion (ITN):** these flows are outside this walkthrough.
-- **Reports once per item (GEN-09):** needs a post, comment, review or itinerary to report.
+Log in as the traveler from step 1.4.
+
+| Step | Request | What it shows | Expect |
+| --- | --- | --- | --- |
+| 9.1 | `POST /api/posts` with `"status": "published"`, `"tags": ["cairo", "history"]` | Publish a post (BLG-01, BLG-08). Save `postId` | 201 |
+| 9.2 | `POST /api/posts` with `"status": "draft"` | Save a draft. Save `draftId` | 201 |
+| 9.3 | `POST /api/posts` with 6 tags | Max 5 tags, 30 characters each (BLG-08) | 400 |
+| 9.4 | `GET /api/posts/mine` | Own posts including drafts, with like and comment counts (BLG-03) | 200 |
+| 9.5 | `PATCH /api/posts/{postId}` | Author edits own post (BLG-04) | 200 |
+
+Log out (guest):
+
+| Step | Request | What it shows | Expect |
+| --- | --- | --- | --- |
+| 9.6 | `GET /api/posts?tag=cairo` | Browse published posts, filter by tag (BLG-02, BLG-08) | 200 |
+| 9.7 | `GET /api/posts/{postId}` | Post page: title, author, date, body, tags, likes, comments (BLG-02) | 200 |
+| 9.8 | `GET /api/posts/{draftId}` | Drafts are private | 404 |
+| 9.9 | `GET /api/posts/search?keyword=cairo` | Search by title, tag or author name, ordered by likes + comments (BLG-09) | 200 |
+| 9.10 | `GET /api/posts/search?keyword=zzzz` | Empty search | 200 with "no results" |
+| 9.11 | `GET /api/posts/authors/{traveler's user id}` | Public author page (BLG-12) | 200 |
+| 9.12 | `PUT /api/posts/{postId}/like` | Liking needs login (ACC-10) | 401 |
+
+Log in as a second traveler (any `@test.local` email):
+
+| Step | Request | What it shows | Expect |
+| --- | --- | --- | --- |
+| 9.13 | `POST /api/posts/{postId}/comments` | Comment, max 500 characters (BLG-05). Save `commentId` | 201 |
+| 9.14 | `PUT /api/posts/{postId}/like` twice | One like per user (BLG-06) | `likeCount` stays 1 |
+| 9.15 | `DELETE /api/posts/{postId}/like` | Remove the like (BLG-06) | `likeCount` 0 |
+| 9.16 | `PATCH /api/posts/{postId}/comments/{commentId}` | Edit own comment (BLG-07) | 200 |
+| 9.17 | `PATCH /api/posts/{postId}` | Can't edit someone else's post (BLG-04) | 403 "You do not own this post" |
+| 9.18 | `POST /api/reports` with `targetType: "post"`, then again | Report once per item (GEN-09) | 201, then 409 |
+
+## Part 10: Itineraries (ITN)
+
+Log in as the first traveler.
+
+| Step | Request | What it shows | Expect |
+| --- | --- | --- | --- |
+| 10.1 | `POST /api/itineraries` (Swagger example; set `"visibility": "public"`) | Itinerary with ordered days; dates come from the start date (ITN-01). Save `itineraryId` | 201 |
+| 10.2 | `POST /api/itineraries/{id}/days` | Add a day, `cityId` from the reference data (ITN-05) | 201 |
+| 10.3 | `POST /api/itineraries/{id}/days/1/move` with `{ "newDayOrder": 2 }` | Reorder; numbering and dates update (ITN-08) | 201 |
+| 10.4 | `POST /api/itineraries/{id}/days/1/budget-entries` | Budget entry (ITN-14) | 201 |
+| 10.5 | `GET /api/itineraries/{id}/budget` | Totals by category and currency, plus totals converted to the preferred currency via FXRatesAPI (ITN-14, ITN-18; needs `FXRATES_API_KEY`) | 200 |
+| 10.6 | `GET /api/itineraries/{id}/export.pdf` | PDF export (ITN-28) | 200 PDF |
+
+Log in as the second traveler:
+
+| Step | Request | What it shows | Expect |
+| --- | --- | --- | --- |
+| 10.7 | `GET /api/itineraries/public` | Public itineraries are searchable (ITN-21) | 200 |
+| 10.8 | `POST /api/itineraries/public/{itineraryId}/clone` | Clone into an independent private copy that keeps attribution (ITN-21) | 201 |
+| 10.9 | `PATCH /api/itineraries/{itineraryId}` | Can't edit someone else's itinerary (ITN-20) | 403 |
+| 10.10 | Private itinerary of the first traveler: `GET /api/itineraries/{id}` | Private itineraries are owner-only | 403 |
 
 ## Known issues (see docs/qa/PERMISSION_TESTS.md)
 
-- P2 error responses and `GET /api/flight-bookings` use a different shape from the rest of the API.
-- `GET /api/hotels` is not paginated.
+- **Hidden content stays public (GEN-10):** after an admin hides a reported post or itinerary, guests can still open it and it still appears in the public lists.
+- **Comments can't be reported or moderated (GEN-09, GEN-10):** `POST /api/reports` with `targetType: "comment"` returns 404.
+- **Payments need Stripe test keys locally:** without `STRIPE_SECRET_KEY`, `POST /api/payments` and `POST /api/hotel-bookings` return 503.
