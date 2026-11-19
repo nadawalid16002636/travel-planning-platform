@@ -433,3 +433,17 @@ How the output was used:
 Logged the results in docs/qa/PERMISSION_TESTS.md (run 4): the four earlier bugs are fixed; reported two new
 bugs to P4/P5 (hidden posts and itineraries stay public; comments can't be reported).
 ================================================
+
+================================================
+Date: 2026-11-19
+Student: Hamza (P6, QA and documentation)
+Tool: Claude
+Related Requirement: Milestone 1 documentation (README, Swagger walkthrough)
+Prompt:
+Update the Swagger walkthrough after the P5 merge and the bug fixes (add blog and itinerary parts, unblock the
+hotel part, refresh the known issues), and add environment variables, demo data and documentation links to the README.
+How the output was used:
+Updated docs/qa/SWAGGER_WALKTHROUGH.md (Parts 9 and 10, demo seed shortcut, current known issues) and README.md
+(environment variables table, "Demo and documentation" section). Ran the new itinerary steps against the API to
+confirm the endpoints, status codes and requirement IDs.
+================================================
