@@ -17,6 +17,10 @@ export class PostComment {
 
   @Prop({ required: true, trim: true, minlength: 1, maxlength: 500 })
   content: string;
+
+  // GEN-10: hidden by an admin; visible only to its author and admins
+  @Prop({ type: Boolean, default: false })
+  hidden?: boolean;
 }
 
 export const PostCommentSchema = SchemaFactory.createForClass(PostComment);
@@ -68,6 +72,10 @@ export class Post {
 
   @Prop({ type: [PostCommentSchema], default: [] })
   comments: PostComment[];
+
+  // GEN-10: hidden by an admin; visible only to its author and admins
+  @Prop({ type: Boolean, default: false })
+  hidden?: boolean;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

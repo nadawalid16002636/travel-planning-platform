@@ -389,5 +389,7 @@ you and claude code to finish it and test everything in the project then submit
 How the output was used:
 The review found missing Swagger tags and summaries on the hotel bookings and reviews endpoints, stray
 duplicated headers in this AI log from a bad merge, and an outdated .env copy step in the README. I checked
-each fix, confirmed no real AI log entry was lost, ran the type-check and all tests, then committed.
+each fix, confirmed no real AI log entry was lost, ran the type-check and all tests, then committed. It also
+found and fixed two moderation bugs: comments could not be reported (GEN-09) and hidden posts, comments and
+itineraries were still shown publicly (GEN-10); new tests cover both.
 =========================================================================================

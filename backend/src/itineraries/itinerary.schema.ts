@@ -48,6 +48,10 @@ export class Itinerary {
   })
   visibility: string;
 
+  // GEN-10: hidden by an admin; visible only to its author and admins
+  @Prop({ type: Boolean, default: false })
+  hidden?: boolean;
+
   @Prop({ default: 'draft', enum: ['draft', 'published'] })
   status: string;
 

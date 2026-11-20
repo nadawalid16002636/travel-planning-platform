@@ -183,8 +183,8 @@ export class ItinerariesController {
   })
   @ApiOkResponse({ type: PublicItineraryDetailsDto })
   @ApiErrors(400, [404, 'Public itinerary not found'])
-  getPublicDetails(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.itinerariesService.getPublicDetails(id);
+  getPublicDetails(@Param('id', ParseObjectIdPipe) id: string, @CurrentUser() user?: JwtUser) {
+    return this.itinerariesService.getPublicDetails(id, user);
   }
 
   @Post('public/:id/clone')

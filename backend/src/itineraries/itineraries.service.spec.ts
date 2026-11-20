@@ -147,8 +147,8 @@ describe('ItinerariesService', () => {
       limit: 10,
       total: 1,
     });
-    expect(model.find).toHaveBeenCalledWith({ userId: authorId, visibility: 'public' });
-    expect(model.countDocuments).toHaveBeenCalledWith({ userId: authorId, visibility: 'public' });
+    expect(model.find).toHaveBeenCalledWith({ userId: authorId, visibility: 'public', hidden: { $ne: true } });
+    expect(model.countDocuments).toHaveBeenCalledWith({ userId: authorId, visibility: 'public', hidden: { $ne: true } });
     expect(select).toHaveBeenCalledWith('_id title countryCodes startDate days.order days.cityId updatedAt');
     expect(sort).toHaveBeenCalledWith({ updatedAt: -1, _id: -1 });
   });
@@ -173,7 +173,7 @@ describe('ItinerariesService', () => {
     await expect(service.findPublicSummaryById(String(id))).resolves.toMatchObject({
       id: String(id), title: 'Shared trip', durationDays: 2, cityIds: ['cairo', 'giza'],
     });
-    expect(model.findOne).toHaveBeenCalledWith({ _id: id, visibility: 'public', userId: { $nin: [] } });
+    expect(model.findOne).toHaveBeenCalledWith({ _id: id, visibility: 'public', hidden: { $ne: true }, userId: { $nin: [] } });
     expect(q.select).toHaveBeenCalledWith('_id title countryCodes startDate days.order days.cityId updatedAt');
     model.findOne.mockReturnValue({ select: vi.fn().mockReturnValue({ lean: vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(null) }) }) });
     await expect(service.findPublicSummaryById(String(id))).resolves.toBeNull();
@@ -519,7 +519,7 @@ describe('ItinerariesService', () => {
     }));
 
     const response = await service.getPublicDetails(String(itineraryId));
-    expect(model.findOne).toHaveBeenCalledWith({ _id: itineraryId, visibility: 'public', userId: { $nin: [] } });
+    expect(model.findOne).toHaveBeenCalledWith({ _id: itineraryId, visibility: 'public', hidden: { $ne: true }, userId: { $nin: [] } });
     expect(response.author).toEqual({ id: String(ownerId), name: 'Alex Morgan' });
     expect(response.days[0].cityInfo).toEqual({ id: 'cairo', name: 'Cairo', countryCode: 'EG' });
     expect(response.days[0].transportEntries[0].toCityInfo.name).toBe('Alexandria');

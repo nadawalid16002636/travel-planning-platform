@@ -82,7 +82,7 @@ describe('ItinerariesController', () => {
     await controller.getPublicDetails('public-id');
     await controller.clonePublicItinerary('public-id', user);
     expect(mockItinerariesService.searchPublic).toHaveBeenCalledWith(query);
-    expect(mockItinerariesService.getPublicDetails).toHaveBeenCalledWith('public-id');
+    expect(mockItinerariesService.getPublicDetails).toHaveBeenCalledWith('public-id', undefined);
     expect(mockItinerariesService.clonePublicItinerary).toHaveBeenCalledWith('public-id', user);
   });
 

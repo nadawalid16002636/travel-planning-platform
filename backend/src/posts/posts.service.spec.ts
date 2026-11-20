@@ -122,7 +122,7 @@ describe('PostsService', () => {
     users.basicInfo.mockResolvedValue([{ id: String(authorId), name: 'Author', email: 'private@example.test' }]);
 
     const response = await service.browsePublished({ page: 2, limit: 5, tag: ' Cairo ' } as any);
-    expect(model.find).toHaveBeenCalledWith({ status: 'published', authorId: { $nin: [] }, tags: 'cairo' });
+    expect(model.find).toHaveBeenCalledWith({ status: 'published', hidden: { $ne: true }, authorId: { $nin: [] }, tags: 'cairo' });
     expect(result.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(result.skip).toHaveBeenCalledWith(5);
     expect(response.data[0]).toMatchObject({ likeCount: 1, commentCount: 2, author: { name: 'Author' } });
@@ -134,7 +134,7 @@ describe('PostsService', () => {
     model.aggregate = vi.fn().mockResolvedValue([{ data: [], total: [] }]);
     const response = await service.searchPublished({ keyword: 'cairo', tag: 'Travel', page: 2, limit: 10 } as any);
     const pipeline = model.aggregate.mock.calls[0][0];
-    expect(pipeline[0]).toEqual({ $match: { status: 'published', authorId: { $nin: [] } } });
+    expect(pipeline[0]).toEqual({ $match: { status: 'published', hidden: { $ne: true }, authorId: { $nin: [] } } });
     expect(pipeline).toContainEqual({ $match: { tags: 'travel' } });
     expect(pipeline).toContainEqual(expect.objectContaining({ $match: expect.objectContaining({ $or: expect.arrayContaining([
       expect.objectContaining({ title: expect.any(RegExp) }),
@@ -381,5 +381,35 @@ describe('PostsService', () => {
     expect(await validate(plainToInstance(PostSearchQueryDto, { keyword: 'x', page: '0', limit: '101' }))).not.toEqual([]);
     expect(await validate(plainToInstance(AttachItineraryToPostDto, { itineraryId: '64b000000000000000000021' }))).toEqual([]);
     expect(await validate(plainToInstance(AttachItineraryToPostDto, { itineraryId: 'not-an-id' }))).not.toEqual([]);
+  });
+  it('GEN-10: a hidden post and hidden comments are visible only to their author and admins', async () => {
+    const authorId = new Types.ObjectId(user.sub);
+    const commenterId = new Types.ObjectId();
+    const post: any = {
+      _id: new Types.ObjectId(), authorId, title: 'Trip', body: 'Body', status: PostStatus.PUBLISHED, hidden: true,
+      tags: [], images: [], likes: [],
+      comments: [
+        { _id: new Types.ObjectId(), authorId: commenterId, content: 'visible', createdAt: new Date('2026-01-01') },
+        { _id: new Types.ObjectId(), authorId: commenterId, content: 'hidden one', hidden: true, createdAt: new Date('2026-01-02') },
+      ],
+    };
+    (service as any).postModel.findById = vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(post) });
+    const guest = undefined;
+    const stranger = { sub: String(new Types.ObjectId()), role: 'user' } as any;
+    const admin = { sub: String(new Types.ObjectId()), role: 'admin' } as any;
+    await expect(service.postPage(String(post._id), { page: 1, limit: 10 } as any, guest)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.postPage(String(post._id), { page: 1, limit: 10 } as any, stranger)).rejects.toBeInstanceOf(NotFoundException);
+    const asAdmin = await service.postPage(String(post._id), { page: 1, limit: 10 } as any, admin);
+    expect(asAdmin.hidden).toBe(true);
+    expect(asAdmin.comments).toHaveLength(2);
+    const asAuthor = await service.postPage(String(post._id), { page: 1, limit: 10 } as any, user);
+    expect(asAuthor.comments.map((comment: any) => comment.content)).toEqual(['visible']);
+    expect(asAuthor.commentCount).toBe(1);
+
+    post.hidden = false;
+    const asStranger = await service.postPage(String(post._id), { page: 1, limit: 10 } as any, stranger);
+    expect(asStranger.comments.map((comment: any) => comment.content)).toEqual(['visible']);
+    const asCommenter = await service.postPage(String(post._id), { page: 1, limit: 10 } as any, { sub: String(commenterId), role: 'user' } as any);
+    expect(asCommenter.comments).toHaveLength(2);
   });
 });

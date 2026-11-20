@@ -791,7 +791,7 @@ export class ItinerariesService {
     }
     // ACC-12: public itineraries of a deactivated user are hidden
     if (await this.usersService.isDeactivated(authorId)) return { data: [], page, limit, total: 0 };
-    const filter = { userId: new Types.ObjectId(authorId), visibility: 'public' };
+    const filter = { userId: new Types.ObjectId(authorId), visibility: 'public', hidden: { $ne: true } }; // GEN-10
     const [documents, total] = await Promise.all([
       this.itineraryModel
         .find(filter)
@@ -1043,6 +1043,7 @@ export class ItinerariesService {
 
     const filter: Record<string, unknown> = {
       visibility: 'public',
+        hidden: { $ne: true }, // GEN-10
       userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
     };
     if (clauses.length) filter.$and = clauses;
@@ -1075,8 +1076,9 @@ export class ItinerariesService {
     };
   }
 
-  async getPublicDetails(id: string) {
-    const itinerary = await this.findPublicItinerary(id);
+  async getPublicDetails(id: string, viewer?: JwtUser) {
+    // GEN-10: admins can still open an itinerary they hid; the author sees it under GET /itineraries/:id
+    const itinerary = await this.findPublicItinerary(id, viewer?.role === Role.ADMIN);
     const author = await this.usersService.findById(String(itinerary.userId));
     const name = `${author.firstName ?? ''} ${author.lastName ?? ''}`.trim();
     const response = this.toResponse(itinerary);
@@ -1158,6 +1160,7 @@ export class ItinerariesService {
       .findOne({
         _id: new Types.ObjectId(id),
         visibility: 'public',
+        hidden: { $ne: true }, // GEN-10
         userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
       })
       .select('_id title countryCodes startDate days.order days.cityId updatedAt')
@@ -1233,12 +1236,13 @@ export class ItinerariesService {
     return ids;
   }
 
-  private async findPublicItinerary(id: string) {
+  private async findPublicItinerary(id: string, includeHidden = false) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid itinerary ID');
     const itinerary = await this.itineraryModel
       .findOne({
         _id: new Types.ObjectId(id),
         visibility: 'public',
+        ...(includeHidden ? {} : { hidden: { $ne: true } }), // GEN-10
         userId: { $nin: await this.usersService.deactivatedUserIds() }, // ACC-12
       })
       .exec();
