@@ -16,11 +16,19 @@ import { Hotel } from './hotels/entities/hotel.entity.js';
 import { HotelRoom } from './hotels/entities/hotel-room.entity.js';
 import { AccountStatus, ProviderType, User } from './users/schemas/user.schema.js';
 import { City, Country } from './reference/schemas/reference.schemas.js';
+import { Post, PostStatus } from './posts/post.schema.js';
 
 const DEMO_PASSWORD = 'Demo@12345';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
+const localDate = (date: Date, timeZone: string) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 
 /** The moderator role names are defined by the team's Role enum; find them by name. */
 function roleLike(re: RegExp): Role {
@@ -47,6 +55,82 @@ const ROOM_TYPES = [
   { name: 'Family Room', type: 'family', beds: 3, occ: 4, price: 150 },
   { name: 'Deluxe Suite', type: 'suite', beds: 2, occ: 3, price: 250 },
 ];
+const DEMO_FLIGHTS = [
+  {
+    airlineCode: 'MS',
+    flightNumber: 'MS777',
+    departureAirport: 'CAI',
+    arrivalAirport: 'LHR',
+    daysFromNow: 7,
+    durationHours: 5,
+    economyPrice: 25000,
+    businessPrice: 75000,
+  },
+  {
+    airlineCode: 'LH',
+    flightNumber: 'LH100',
+    departureAirport: 'FRA',
+    arrivalAirport: 'CDG',
+    daysFromNow: 10,
+    durationHours: 2,
+    economyPrice: 15000,
+    businessPrice: 45000,
+  },
+  {
+    airlineCode: 'EK',
+    flightNumber: 'EK201',
+    departureAirport: 'DXB',
+    arrivalAirport: 'JFK',
+    daysFromNow: 14,
+    durationHours: 14,
+    economyPrice: 55000,
+    businessPrice: 150000,
+  },
+];
+const DEMO_POSTS = [
+  {
+    traveler: 1,
+    title: 'A Week Exploring Cairo',
+    body: 'Discover the Pyramids of Giza, the Egyptian Museum, Khan el-Khalili, and the beautiful streets of Cairo.',
+    status: PostStatus.PUBLISHED,
+    tags: ['Egypt', 'Cairo', 'History'],
+  },
+  {
+    traveler: 1,
+    title: 'My Dream Trip to Japan',
+    body: 'A travel plan covering Tokyo, Kyoto, traditional temples, Japanese food, and cherry blossom season.',
+    status: PostStatus.DRAFT,
+    tags: ['Japan', 'Tokyo', 'Culture'],
+  },
+  {
+    traveler: 2,
+    title: 'Exploring London in Five Days',
+    body: 'Five days visiting Big Ben, Buckingham Palace, the British Museum, and other famous London attractions.',
+    status: PostStatus.PUBLISHED,
+    tags: ['London', 'UK', 'City Break'],
+  },
+  {
+    traveler: 2,
+    title: 'A Weekend in Paris',
+    body: 'A weekend itinerary featuring the Eiffel Tower, Louvre Museum, local cafés, and Parisian streets.',
+    status: PostStatus.PUBLISHED,
+    tags: ['France', 'Paris', 'Travel'],
+  },
+  {
+    traveler: 3,
+    title: 'Dubai Travel Guide',
+    body: 'A guide to exploring Dubai, including Burj Khalifa, Dubai Marina, desert activities, and shopping.',
+    status: PostStatus.PUBLISHED,
+    tags: ['Dubai', 'UAE', 'Guide'],
+  },
+  {
+    traveler: 3,
+    title: 'Planning My Next Adventure',
+    body: 'Ideas and notes for my next international trip, including destinations, budgets, and activities.',
+    status: PostStatus.DRAFT,
+    tags: ['Planning', 'Adventure'],
+  },
+];
 
 const app = await NestFactory.createApplicationContext(AppModule, { logger: ['warn', 'error'] });
 try {
@@ -57,6 +141,9 @@ try {
   const users = get(User.name);
   const cities = get(City.name);
   const countries = get(Country.name);
+  const airports = get('Airport');
+  const flights = get('Flight');
+  const posts = get(Post.name);
 
   const cityList = await cities.find().sort({ _id: 1 }).lean();
   if (!cityList.length) throw new Error('No cities found. Run `npm run seed` (reference data) first.');
@@ -159,12 +246,121 @@ try {
     accounts.push(['hotel moderator', email, h.name]);
   }
 
+// ---- demo flights ----
+  let flightCount = 0;
+
+  for (const f of DEMO_FLIGHTS) {
+    const airline = await airlines.findOne({ code: f.airlineCode }).lean();
+    const departure = await airports.findById(f.departureAirport).lean();
+    const arrival = await airports.findById(f.arrivalAirport).lean();
+
+    if (!airline) throw new Error(`Airline ${f.airlineCode} not found.`);
+    if (!departure) throw new Error(`Airport ${f.departureAirport} not found.`);
+    if (!arrival) throw new Error(`Airport ${f.arrivalAirport} not found.`);
+
+    const departureAt = new Date();
+    departureAt.setUTCDate(departureAt.getUTCDate() + f.daysFromNow);
+    departureAt.setUTCHours(8, 0, 0, 0);
+
+    const arrivalAt = new Date(
+      departureAt.getTime() + f.durationHours * 60 * 60 * 1000,
+    );
+
+    const departureLocalDate = localDate(
+      departureAt,
+      departure.timeZone,
+    );
+
+    await flights.findOneAndUpdate(
+      {
+        airlineId: airline._id,
+        flightNumber: f.flightNumber,
+        departureLocalDate,
+      },
+      {
+        $set: {
+          flightNumber: f.flightNumber,
+          airlineId: airline._id,
+          departureAirport: f.departureAirport,
+          arrivalAirport: f.arrivalAirport,
+          departureTimeZone: departure.timeZone,
+          arrivalTimeZone: arrival.timeZone,
+          departureLocalDate,
+          departureAt,
+          arrivalAt,
+          status: 'scheduled',
+          cabins: [
+            {
+              cabinClass: 'economy',
+              capacity: 180,
+              freeBags: 1,
+              maxWeightKgPerBag: 23,
+              reserved: 0,
+              priceMinor: f.economyPrice,
+              currency: 'USD',
+            },
+            {
+              cabinClass: 'business',
+              capacity: 30,
+              freeBags: 2,
+              maxWeightKgPerBag: 32,
+              reserved: 0,
+              priceMinor: f.businessPrice,
+              currency: 'USD',
+            },
+          ],
+          policySnapshot: {
+            baggagePolicy: airline.baggagePolicy,
+            cancellationPolicy: airline.cancellationPolicy,
+          },
+        },
+      },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+
+    flightCount++;
+  }
+
+  console.log(`Demo flights created/updated: ${flightCount}`);
   // ---- demo travelers ----
   for (const n of [1, 2, 3]) {
     const email = `traveler${n}@demo.travel`;
     await upsertUser(email, 'Demo', `Traveler ${n}`, { role: Role.USER });
     accounts.push(['traveler', email, '-']);
   }
+// ---- demo blog posts ----
+  let postCount = 0;
+
+  for (const p of DEMO_POSTS) {
+    const author = await users.findOne({
+      email: `traveler${p.traveler}@demo.travel`,
+    });
+
+    if (!author) {
+      throw new Error(`Demo traveler ${p.traveler} not found.`);
+    }
+
+    await posts.findOneAndUpdate(
+      { authorId: author._id, title: p.title },
+      {
+        $set: {
+          authorId: author._id,
+          title: p.title,
+          body: p.body,
+          status: p.status,
+          tags: p.tags,
+          images: [],
+          likes: [],
+          comments: [],
+        },
+      },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+
+    postCount++;
+  }
+
+  console.log(`Demo blog posts created/updated: ${postCount}`);
 
   console.log(`\nDemo seed finished: ${AIRLINES.length} airlines, ${HOTELS.length} hotels, ${roomCount} rooms, ${accounts.length} accounts.`);
   console.log(`All demo accounts use the password: ${DEMO_PASSWORD}\n`);
