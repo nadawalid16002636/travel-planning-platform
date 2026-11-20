@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiErrors, CurrentUser, Public, Roles } from '../common/decorators.js';
 import { ParseObjectIdPipe } from '../common/parse-object-id.pipe.js';
 import { Role } from '../common/roles.js';
@@ -17,11 +18,13 @@ import { ReviewQueryDto } from './dto/review-query.dto.js';
 import { UpdateReviewDto } from './dto/update-review.dto.js';
 import { ReviewsService } from './reviews.service.js';
 
+@ApiTags('Hotel reviews')
 @Controller()
 export class ReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 
   @Public()
+  @ApiOperation({ summary: 'HTL-24, ACC-12: average rating, rating count and reviews of a hotel (deactivated authors shown as Deleted user)' })
   @Get('hotels/:hotelId/reviews')
   @ApiErrors(400, [404, 'Hotel not found'])
   findForHotel(
@@ -33,6 +36,8 @@ export class ReviewsController {
   }
 
   @Roles(Role.USER)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'HTL-23: review a Completed stay (one review per reservation)' })
   @Post('hotel-bookings/:bookingId/review')
   @ApiErrors(
     400,
@@ -50,6 +55,8 @@ export class ReviewsController {
   }
 
   @Roles(Role.USER)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'HTL-23: edit my review' })
   @Patch('reviews/:id')
   @ApiErrors(400, 401, 403, [404, 'Review not found'])
   update(
@@ -61,6 +68,8 @@ export class ReviewsController {
   }
 
   @Roles(Role.USER)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'HTL-23: delete my review' })
   @Delete('reviews/:id')
   @ApiErrors(400, 401, 403, [404, 'Review not found'])
   remove(

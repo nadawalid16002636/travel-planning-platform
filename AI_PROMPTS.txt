@@ -2,11 +2,6 @@ AI PROMPT LOG — Travel Planning and Booking Platform (Software Project I, Wint
 Record every prompt that materially contributed to the project, using the format below.
 
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-02
 Student: Yassin (team lead)
 Tool: Claude
@@ -19,18 +14,6 @@ How the output was used:
 Used the plan to assign roles. Reviewed the generated skeleton (guards, decorators,
 exception filter, pagination helper, service stubs) and committed it as the project base.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-02
 Student: Yassin (team lead)
 Tool: Claude
@@ -44,18 +27,6 @@ How the output was used:
 Reviewed the generated schemas, services, controllers and DTOs, checked the limits against the
 requirements sheet (common/auth.config.ts), tested each endpoint in Swagger, then committed.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-02
 Student: Yassin (team lead)
 Tool: Claude
@@ -70,18 +41,6 @@ How the output was used:
 Reviewed the session design and the seeder, tested every auth flow and the reference endpoints against
 the shared database, then committed on feature/GEN-12-reference-data.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-02
 Student: Yassin (team lead)
 Tool: Claude (chat) and Claude Code (VS Code)
@@ -95,18 +54,6 @@ Applied the fixes it found (supported-currency validation for ACC-09, full-name 
 in-app notification on suspension for ACC-15/16, GET /api/airports as in section 8.3), retested the
 endpoints, and kept a list of items that depend on other modules (ACC-12, ACC-15 providers, ACC-17).
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-02
 Student: Yassin (team lead)
 Tool: Claude Code
@@ -125,14 +72,6 @@ paginated reference lists with validated query DTOs (GEN-05), strict ObjectId ch
 equalised for unknown emails, .env.* ignored. Retested the flows against the running API with curl.
 Left ACC-12 booking check, ACC-13 provider check, ACC-15 providers and ACC-17 to the booking/provider modules.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-=========================================================================================
-
-================================================
 Date: 2026-11-07 (work began 2026-11-02)
 Student: Nada Walid (P2, airlines, flights and flight bookings)
 Tool: Codex
@@ -162,8 +101,6 @@ implementation and integration contracts before submission/merging. Automated
 checks do not represent student review or completed P1/P4 integration.
 No commit, push, PR, merge, collection deletion or database reset was performed.
 =========================================================================================
-
-================================================
 Date: 2026-11-07
 Student: Nada Walid (P2, airlines, flights and flight bookings)
 Tool: Codex
@@ -172,13 +109,7 @@ Prompt:
 Install GitHub CLI, then push and merge the P2 work.
 How the output was used:
 Codex reconciled the branch with develop, kept the newer NestJS/ESM setup and teammate modules, adapted tests to Vitest, and wired P1 sessions and the shared airport schema. Build, tests and lint passed before publication.
-
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-07
 Student: Yassin (team lead)
 Tool: Claude + Claude Code
@@ -201,18 +132,6 @@ routes appear in Swagger, then tested them in Swagger logged in as the admin: th
 type/status/date filters, airline and hotel deactivate/reactivate, the 404 when creating a moderator for
 an unknown airline or hotel, and the matching audit log entries.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-07
 Student: Yassin (team lead)
 Tool: Claude + Claude Code
@@ -234,17 +153,6 @@ Then ran 52 live checks against the running API (auth, users, admin, reference a
 all passed. Left GEN-01 notifications (P4) and the ACC-12 "Deleted user" display (P3/P5) to their
 owners.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-11
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -259,18 +167,6 @@ Saved the checklist and run log as docs/qa/PERMISSION_TESTS.md; the tests were r
 Reported two bugs to their owners: P2 routes use a different error format from the global filter, and
 GET /api/hotels is not paginated (GEN-05).
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-11
 Student: Anas
 Tool: Cursor Grok
@@ -289,8 +185,6 @@ the webhook, policy acceptance, the flight outbox worker, notification storage, 
 upload limits, and report moderation. Wired hotel cancellation to an in-app notification
 and hid moderated reviews from the public hotel review list.
 =========================================================================================
-
-================================================
 Date: 2026-11-13
 Student: Nada Walid (P2, airlines, flights and flight bookings)
 Tool: Codex
@@ -299,9 +193,7 @@ Prompt:
 Integrate P2 with feature/P4-payments-notifications-uploads-reports.
 How the output was used:
 Integrated locally by fast-forward. Added retrieved PaymentIntent ownership, amount and currency checks, current-outcome handling, durable flight notification deduplication and regression tests. Updated the merged-app mock and handoff. No push or production database operation was performed.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-13
 Student: Nada Walid (P2, airlines, flights and flight bookings)
 Tool: Codex
@@ -310,13 +202,7 @@ Prompt:
 Complete the P2 payment integration and prepare it for push and merge.
 How the output was used:
 Refreshed origin/develop, where PRs #5 and #11 were already merged. Verified concurrent notification replay and preservation of read state. The build, 48 unit and integration tests, one end-to-end test and oxlint passed with five existing warnings. Prepared the fixes for publication. Live Atlas and Stripe execution remained unverified.
-
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-15
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -328,9 +214,7 @@ request examples, with the expected result and requirement ID for each step.
 How the output was used:
 Saved as docs/qa/SWAGGER_WALKTHROUGH.md. Checked the endpoints, query parameters and expected responses against
 the running API; marked the parts that are blocked (hotel booking, P5 modules) as such.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-15
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -345,18 +229,6 @@ login, moderators, holds, availability and payments) and a two-line hook in main
 the running API; all passed validation (remaining errors were expected ones: placeholder ids, Stripe not
 configured, and the hotel room bug already reported).
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-=========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
 Date: 2026-11-17
 Student: Nada Nasreldin (P5)
 Tool: Cursor (Composer)
@@ -372,13 +244,6 @@ unit tests), budget conversion with cached FX rates, public search/clone, hotel/
 hooks, blog CRUD/likes/comments/author page, and BLG-10/ITN-12 image attach/remove endpoints
 calling UploadsService. Synced with develop after P4 uploads landed; verified with vitest.
 =========================================================================================
-
-================================================
-Date: 2026-11-15
-Student: Hamza (P6, QA and documentation)
-Tool: Claude
-
-================================================
 Date: 2026-11-15
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -390,8 +255,7 @@ How the output was used:
 Logged the results in docs/qa/PERMISSION_TESTS.md (run 3). Reported the root cause of the hotel room bug
 (@Prop type Types.ObjectId becomes Mixed under @nestjs/mongoose 12 + Mongoose 9) to P3 and the team lead with
 the list of affected fields.
-================================================
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Yassin (team lead)
 Tool: Claude + Claude Code
@@ -409,8 +273,7 @@ mongoose. Then tested as the admin against the running API: create hotel (cairo,
 PATCH room availability for December 2026 200 (P6 reported 404 here before the fix),
 GET /api/hotels/{id}/reservations 200.
 Documents saved before the fix may still hold string ids and need a one-off migration.
-================================================
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Yassin (team lead)
 Tool: Claude + Claude Code
@@ -428,9 +291,7 @@ error filter was removed so P2 errors use the global format. tsc passed and all 
 passed with vitest. Checked against the running API: GET /api/hotels returns { data, page, limit, total },
 a guest GET /api/flight-bookings returns 401 with path and timestamp, and P2 errors (invalid flight id,
 unknown airport) now use the same format.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -441,9 +302,7 @@ four bugs reported earlier, against the running API on a local in-memory MongoDB
 How the output was used:
 Logged the results in docs/qa/PERMISSION_TESTS.md (run 4): the four earlier bugs are fixed; reported two new
 bugs to P4/P5 (hidden posts and itineraries stay public; comments can't be reported).
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Hamza (P6, QA and documentation)
 Tool: Claude
@@ -455,9 +314,7 @@ How the output was used:
 Updated docs/qa/SWAGGER_WALKTHROUGH.md (Parts 9 and 10, demo seed shortcut, current known issues) and README.md
 (environment variables table, "Demo and documentation" section). Ran the new itinerary steps against the API to
 confirm the endpoints, status codes and requirement IDs.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Habiba
 Tool: Copilot SDK in VS Code
@@ -473,9 +330,7 @@ in the hotel-bookings controller and P2 merged-app integration test. Verified th
 backend with the build, complete Vitest suite and lint. The complete test suite
 passed after the integration mock was corrected; lint passed with warnings only.
 External P1/P4/Atlas browser and live-database integration remains team-owned.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-18
 Student: Marwan Maged
 Tool: Claude
@@ -486,9 +341,7 @@ moderator accounts and demo travelers, matching our existing schemas.
 How the output was used:
 Created src/seed-demo.ts and the "seed:demo" npm script, ran it against
 Atlas and verified logins in Swagger.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Marwan Maged
 Tool: Claude
@@ -499,9 +352,7 @@ database. Why?
 How the output was used:
 Found that hotelId in hotel-room.entity.ts used Types.ObjectId instead of
 Schema.Types.ObjectId, so string ids were not cast. Fixed it and opened a PR.
-================================================
-
-================================================
+=========================================================================================
 Date: 2026-11-19
 Student: Marwan Maged
 Tool: Claude
@@ -513,8 +364,7 @@ How the output was used:
 Created test/hotel-booking-concurrency.e2e-spec.ts, reviewed it, ran it
 against the running API and fixed the listing check after finding a
 related ObjectId bug.
-================================================
-
+=========================================================================================
 Date: 2026-11-20
 Student: Marwan Maged
 Tool: Claude
@@ -526,4 +376,18 @@ expired holds releasing the room.
 How the output was used:
 Created test/payments-stripe.e2e-spec.ts, configured Stripe test keys in
 .env, ran it against the running API and verified all 5 tests pass.
-================================================
+=========================================================================================
+Date: 2026-11-20
+Student: Yassin (team lead)
+Tool: Claude
+Related Requirement: Milestone 1 final review (GEN-01, all modules)
+Prompt:
+now we should be done with the project all members finished there parts i want you and claude code to see
+everything in the project pdf for milestone 1 and make sure we all finished everything nothing missing and
+nothing wrong and we would score 100% in milestone 1 and also if there anything missing or wrong i want me and
+you and claude code to finish it and test everything in the project then submit
+How the output was used:
+The review found missing Swagger tags and summaries on the hotel bookings and reviews endpoints, stray
+duplicated headers in this AI log from a bad merge, and an outdated .env copy step in the README. I checked
+each fix, confirmed no real AI log entry was lost, ran the type-check and all tests, then committed.
+=========================================================================================

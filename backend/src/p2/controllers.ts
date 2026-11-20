@@ -42,6 +42,7 @@ import { FlightsService } from './flights.service.js';
 export class AirportsController {
   constructor(private readonly airports: AirportsService) {}
   @Get(':code')
+  @ApiOperation({ summary: 'FLT-02, GEN-12: one airport by IATA code' })
   byCode(@Param('code') code: string) { return this.airports.byCode(code); }
   @Get()
   @ApiOperation({ summary: 'FLT-02: Look up official airport reference data' })
