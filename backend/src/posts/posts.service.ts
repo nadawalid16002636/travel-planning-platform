@@ -9,7 +9,7 @@ import { Model, Types } from 'mongoose';
 import { DELETED_USER_NAME, UsersService } from '../users/users.service.js';
 import { ItinerariesService } from '../itineraries/itineraries.service.js';
 import { UploadsService } from '../uploads/uploads.service.js';
-import type { JwtUser } from '../common/roles.js';
+import { Role, type JwtUser } from '../common/roles.js';
 import { AttachItineraryToPostDto, CreatePostCommentDto, CreatePostDto, MyPostsQueryDto, PostBrowseQueryDto, PostCommentsQueryDto, PostSearchQueryDto, UpdatePostCommentDto, UpdatePostDto } from './dto/post.dto.js';
 import { Post, PostDocument, PostStatus } from './post.schema.js';
 
@@ -44,6 +44,7 @@ export class PostsService {
   async browsePublished(query: PostBrowseQueryDto) {
     const filter: Record<string, unknown> = {
       status: PostStatus.PUBLISHED,
+      hidden: { $ne: true }, // GEN-10
       authorId: { $nin: await this.users.deactivatedUserIds() }, // ACC-12
     };
     if (query.tag?.trim()) filter.tags = this.normalizeTag(query.tag);
@@ -63,11 +64,15 @@ export class PostsService {
   async searchPublished(query: PostSearchQueryDto) {
     const stages: Record<string, unknown>[] = [
       // ACC-12: posts of deactivated users are hidden
-      { $match: { status: PostStatus.PUBLISHED, authorId: { $nin: await this.users.deactivatedUserIds() } } },
+      { $match: { status: PostStatus.PUBLISHED, hidden: { $ne: true }, authorId: { $nin: await this.users.deactivatedUserIds() } } },
       {
         $addFields: {
           likeCount: { $size: { $ifNull: ['$likes', []] } },
-          commentCount: { $size: { $ifNull: ['$comments', []] } },
+          commentCount: {
+            $size: {
+              $filter: { input: { $ifNull: ['$comments', []] }, as: 'c', cond: { $ne: ['$$c.hidden', true] } },
+            },
+          },
         },
       },
       {
@@ -200,8 +205,14 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
     if (await this.users.isDeactivated(String(post.authorId))) throw new NotFoundException('Post not found'); // ACC-12
+    // GEN-10: hidden content is visible only to its author and admins
+    const isAdmin = user?.role === Role.ADMIN;
+    if (post.hidden && !isAdmin && String(post.authorId) !== user?.sub) throw new NotFoundException('Post not found');
     const author = await this.users.findById(String(post.authorId));
-    const sortedComments = [...(post.comments ?? [])].sort((left: any, right: any) => {
+    const visibleComments = (post.comments ?? []).filter(
+      (comment: any) => !comment.hidden || isAdmin || String(comment.authorId) === user?.sub,
+    );
+    const sortedComments = [...visibleComments].sort((left: any, right: any) => {
       const byDate = new Date(left.createdAt ?? 0).getTime() - new Date(right.createdAt ?? 0).getTime();
       return byDate || String(left._id).localeCompare(String(right._id));
     });
@@ -225,10 +236,12 @@ export class PostsService {
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       likeCount: post.likes?.length ?? 0,
-      commentCount: post.comments?.length ?? 0,
+      commentCount: visibleComments.length,
+      ...(post.hidden ? { hidden: true } : {}),
       comments: pageComments.map((comment: any) => ({
         id: String(comment._id),
         content: comment.content,
+        ...(comment.hidden ? { hidden: true } : {}),
         createdAt: comment.createdAt,
         updatedAt: comment.updatedAt,
         author: {
@@ -320,7 +333,7 @@ export class PostsService {
   async like(id: string, user: JwtUser) {
     const postId = this.parseId(id, 'post');
     const post: any = await this.postModel.findOneAndUpdate(
-      { _id: postId, status: PostStatus.PUBLISHED },
+      { _id: postId, status: PostStatus.PUBLISHED, hidden: { $ne: true } },
       { $addToSet: { likes: new Types.ObjectId(user.sub) } },
       { new: true },
     ).exec();
@@ -331,7 +344,7 @@ export class PostsService {
   async unlike(id: string, user: JwtUser) {
     const postId = this.parseId(id, 'post');
     const post: any = await this.postModel.findOneAndUpdate(
-      { _id: postId, status: PostStatus.PUBLISHED },
+      { _id: postId, status: PostStatus.PUBLISHED, hidden: { $ne: true } },
       { $pull: { likes: new Types.ObjectId(user.sub) } },
       { new: true },
     ).exec();
@@ -391,7 +404,7 @@ export class PostsService {
   }
 
   private async listPublishedByAuthor(authorId: Types.ObjectId, query: MyPostsQueryDto) {
-    const filter = { authorId, status: PostStatus.PUBLISHED };
+    const filter = { authorId, status: PostStatus.PUBLISHED, hidden: { $ne: true } }; // GEN-10
     const [posts, total] = await Promise.all([
       this.postModel.find(filter)
         .select('authorId title body tags images likes comments createdAt updatedAt')
@@ -417,8 +430,8 @@ export class PostsService {
       createdAt: post.createdAt,
       author: { id: String(post.authorId), name: nameById.get(String(post.authorId)) ?? 'Unknown author' },
       likeCount: post.likes?.length ?? 0,
-      commentCount: post.comments?.length ?? 0,
-      interactionScore: (post.likes?.length ?? 0) + (post.comments?.length ?? 0),
+      commentCount: (post.comments ?? []).filter((comment: any) => !comment.hidden).length,
+      interactionScore: (post.likes?.length ?? 0) + (post.comments ?? []).filter((comment: any) => !comment.hidden).length,
     }));
   }
 
@@ -438,6 +451,7 @@ export class PostsService {
     const post = await this.postModel.findOne({
       _id: this.parseId(id, 'post'),
       status: PostStatus.PUBLISHED,
+      hidden: { $ne: true }, // GEN-10
       authorId: { $nin: await this.users.deactivatedUserIds() }, // ACC-12
     }).exec();
     if (!post) throw new NotFoundException('Published post not found');

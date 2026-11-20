@@ -10,7 +10,7 @@ Requirements: Node.js 20+ and Git.
 git clone <repo-url>
 cd <repo>/backend
 npm install
-cp ../.env.example .env      # then paste the real values from the team lead
+cp .env.example .env         # then paste the real values from the team lead
 npm run start:dev
 ```
 
