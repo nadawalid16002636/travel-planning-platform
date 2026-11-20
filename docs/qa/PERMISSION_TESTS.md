@@ -238,3 +238,23 @@ Follow-up: PR #21 corrected ObjectId casting for the hotel room schema on `devel
 6. **Comments can't be reported or moderated (GEN-09, GEN-10).** `POST /api/reports` with `targetType: 'comment'` and a real comment id
    → 404 "Content not found"; `DELETE /api/admin/content/comment/{id}` → 404 too. Cause: comments are embedded inside posts
    (`posts.comments`), but `reports.service` looks for them in a separate `comments` collection. Owners: P4 and P5.
+
+## Run log 5: final check, 20 Nov 2026, local in-memory DB, develop @ 5c5e797
+
+Ran the whole [Swagger walkthrough](SWAGGER_WALKTHROUGH.md), Parts 1 to 10 (about 90 requests, using the Swagger examples), on the final code.
+
+| Part | Result |
+| --- | --- |
+| 1. Guest | ✅ all steps |
+| 2. Admin setup (airline, policies, flight, hotel, room, availability, moderators) | ✅ all steps |
+| 3. Moderators (temporary password, own provider only) | ✅ all steps |
+| 4. Traveler books a flight | ✅ search finds the flight, hold, booking (pending payment), policies, acceptance, booking details, notifications. Payment → 503 without a local Stripe key (expected) |
+| 5. Traveler books a hotel | ✅ search, available rooms with total price. Booking → 503 without a local Stripe key (expected) |
+| 6. Privacy between users | ✅ another traveler gets 403 on the booking, e-ticket and payment; sees only an empty own list |
+| 7. Admin oversight | ✅ account search, bookings overview, suspend (login → 403), reactivate, password reset, hotel deactivate (hidden from search) and reactivate, audit log, reports |
+| 8. Security checks | ✅ account lock, no `role` injection, bad ids, forged webhook |
+| 9. Blog | ✅ all 18 steps |
+| 10. Itineraries | ✅ all 10 steps, including PDF export and clone |
+
+**Still open:** bug 5 (hidden posts and itineraries stay public) and bug 6 (comments can't be reported). Confirming a payment end to end
+was not tested locally (no Stripe test key); P7's Stripe test-mode e2e tests cover PAY-01 and PAY-03.
