@@ -514,3 +514,16 @@ Created test/hotel-booking-concurrency.e2e-spec.ts, reviewed it, ran it
 against the running API and fixed the listing check after finding a
 related ObjectId bug.
 ================================================
+
+Date: 2026-11-20
+Student: Marwan Maged
+Tool: Claude
+Related Requirement: PAY-01, PAY-02, PAY-03
+Prompt:
+Write e2e tests for our hotel payment flow in Stripe test mode: successful
+card, declined card with retry, forged webhooks, refund on cancellation and
+expired holds releasing the room.
+How the output was used:
+Created test/payments-stripe.e2e-spec.ts, configured Stripe test keys in
+.env, ran it against the running API and verified all 5 tests pass.
+================================================
