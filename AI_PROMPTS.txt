@@ -474,3 +474,43 @@ backend with the build, complete Vitest suite and lint. The complete test suite
 passed after the integration mock was corrected; lint passed with warnings only.
 External P1/P4/Atlas browser and live-database integration remains team-owned.
 ================================================
+
+================================================
+Date: 2026-11-18
+Student: Marwan Maged
+Tool: Claude
+Related Requirement: ACC-13, FLT-01, HTL-01, HTL-03
+Prompt:
+Write an idempotent demo seed script for airlines, hotels, rooms,
+moderator accounts and demo travelers, matching our existing schemas.
+How the output was used:
+Created src/seed-demo.ts and the "seed:demo" npm script, ran it against
+Atlas and verified logins in Swagger.
+================================================
+
+================================================
+Date: 2026-11-19
+Student: Marwan Maged
+Tool: Claude
+Related Requirement: HTL-15
+Prompt:
+GET /hotels/:id/rooms/available returns [] although rooms exist in the
+database. Why?
+How the output was used:
+Found that hotelId in hotel-room.entity.ts used Types.ObjectId instead of
+Schema.Types.ObjectId, so string ids were not cast. Fixed it and opened a PR.
+================================================
+
+================================================
+Date: 2026-11-19
+Student: Marwan Maged
+Tool: Claude
+Related Requirement: HTL-16, HTL-18
+Prompt:
+Write e2e tests that fire simultaneous hotel bookings at the same room and
+check that only one succeeds, including multi-room bookings.
+How the output was used:
+Created test/hotel-booking-concurrency.e2e-spec.ts, reviewed it, ran it
+against the running API and fixed the listing check after finding a
+related ObjectId bug.
+================================================
