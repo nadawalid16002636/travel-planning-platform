@@ -16,11 +16,11 @@ describe('PostsController itinerary attachment', () => {
     controller = module.get(PostsController);
   });
 
-  it('forwards attach and detach requests with the authenticated owner', () => {
+  it('', async () => {
     const user = { sub: 'user-id' } as any;
     const dto = { itineraryId: '64b000000000000000000001' } as any;
-    controller.attachItinerary('64b000000000000000000002', dto, user);
-    controller.detachItinerary('64b000000000000000000002', user);
+    await controller.attachItinerary('64b000000000000000000002', dto, user);
+    await controller.detachItinerary('64b000000000000000000002', user);
     expect(posts.attachItinerary).toHaveBeenCalledWith('64b000000000000000000002', dto, user);
     expect(posts.detachItinerary).toHaveBeenCalledWith('64b000000000000000000002', user);
   });

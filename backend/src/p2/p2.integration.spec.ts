@@ -252,8 +252,8 @@ describe('P2 isolated MongoDB replica-set integration', () => {
     ]);
     const a = await api().get('/api/airports?code=CAI').expect(200);
     expect(a.body.total).toBe(1);
-    expect(a.body.items[0].officialId).toBe('test-cai');
-    expect(a.body.items[0].name).toBe('Synthetic Cairo');
+    expect(a.body.data[0].officialId).toBe('test-cai');
+    expect(a.body.data[0].name).toBe('Synthetic Cairo');
     await api().get('/api/airports?code=BADCODE').expect(400);
     await expect(
       app.get(AirportsService).importReference([
@@ -301,12 +301,12 @@ describe('P2 isolated MongoDB replica-set integration', () => {
     const res = await api().get('/api/flights/search').query(q).expect(200);
     expect(res.body.outbound.total).toBe(1);
     expect(res.body.inbound.total).toBe(1);
-    expect(res.body.outbound.items[0].availableSeats).toBe(3);
+    expect(res.body.outbound.data[0].availableSeats).toBe(3);
     const empty = await api()
       .get('/api/flights/search')
       .query({ ...q, minPriceMinor: 20000 })
       .expect(200);
-    expect(empty.body.outbound.items).toEqual([]);
+    expect(empty.body.outbound.data).toEqual([]);
     await api()
       .get('/api/flights/search')
       .query({ ...q, returnDate: undefined })
@@ -901,7 +901,10 @@ describe('P2 isolated MongoDB replica-set integration', () => {
       let role = Role.ADMIN;
       const fixture = await Test.createTestingModule({ imports: [AppModule] })
         .overrideProvider(SessionsService).useValue({ authenticate: async () => authenticated ? { userId: '507f1f77bcf86cd799439011', sessionId: 'test' } : null })
-        .overrideProvider(UsersService).useValue({ registerDeactivationCheck: () => {}, findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }) })
+        .overrideProvider(UsersService).useValue({
+          findAuthState: async () => ({ role, status: AccountStatus.ACTIVE, mustChangePassword: false }),
+          registerDeactivationCheck: () => undefined,
+        })
         .compile();
       merged = fixture.createNestApplication();
       merged.setGlobalPrefix('api');

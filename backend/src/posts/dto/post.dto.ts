@@ -198,4 +198,3 @@ export class PublicAuthorPageDto {
   @ApiProperty({ type: Object })
   itineraries: Record<string, unknown>;
 }
-

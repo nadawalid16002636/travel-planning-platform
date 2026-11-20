@@ -11,9 +11,8 @@ import { ReviewsService } from '../reviews/reviews.service.js';
 import { ContentActionDto, CreateReportDto, ListReportsDto, ResolveReportDto } from './dto/report.dto.js';
 import { ContentModeration, Report, type ReportTarget } from './schemas/report.schema.js';
 
-const COLLECTIONS: Record<Exclude<ReportTarget, 'review'>, string[]> = {
-  post: ['posts', 'blogposts'],
-  comment: ['comments'],
+const COLLECTIONS: Record<Exclude<ReportTarget, 'review' | 'comment'>, string[]> = {
+  post: ['posts'],
   itinerary: ['itineraries'],
 };
 
@@ -113,6 +112,12 @@ export class ReportsService {
       if (!review) throw new NotFoundException('Content not found');
       return;
     }
+    if (type === 'comment') {
+      // comments are stored inside their post (posts.comments)
+      const found = await this.connection.collection('posts').findOne({ 'comments._id': new Types.ObjectId(id) });
+      if (found) return;
+      throw new NotFoundException('Content not found');
+    }
     for (const name of COLLECTIONS[type]) {
       const found = await this.connection.collection(name).findOne({ _id: new Types.ObjectId(id) });
       if (found) return;
@@ -122,6 +127,14 @@ export class ReportsService {
 
   private async updateDocument(type: Exclude<ReportTarget, 'review'>, id: string, action: 'hide' | 'delete') {
     const objectId = new Types.ObjectId(id);
+    if (type === 'comment') {
+      const posts = this.connection.collection('posts');
+      const result =
+        action === 'delete'
+          ? await posts.updateOne({ 'comments._id': objectId }, { $pull: { comments: { _id: objectId } } } as any)
+          : await posts.updateOne({ 'comments._id': objectId }, { $set: { 'comments.$.hidden': true } });
+      return result.matchedCount > 0;
+    }
     for (const name of COLLECTIONS[type]) {
       const collection = this.connection.collection(name);
       const exists = await collection.findOne({ _id: objectId });
