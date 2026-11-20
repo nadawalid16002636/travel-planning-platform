@@ -31,8 +31,11 @@ import { FxModule } from './fx/fx.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRootAsync({
+ConfigModule.forRoot({
+  isGlobal: true,
+  envFilePath: process.env.LOCAL_DB === 'true' ? '.env.local' : '.env',
+}),
+MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({ uri: config.getOrThrow<string>('MONGODB_URI') }),
     }),
