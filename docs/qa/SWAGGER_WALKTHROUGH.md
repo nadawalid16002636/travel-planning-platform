@@ -128,7 +128,7 @@ Log out, log in → example **admin**.
 | --- | --- | --- |
 | Account lock (ACC-05) | Log in with a wrong password 5 times | 5th try: 403 "Account locked after 5 failed attempts" |
 | No privilege escalation | `POST /api/auth/register` with an extra `"role": "admin"` | 400 "property role should not exist" |
-| Bad ids | `GET /api/hotel-bookings/abc` | 400 "Invalid id" |
+| Bad ids | Logged in as a traveler: `GET /api/hotel-bookings/abc` | 400 "Invalid id" (401 if logged out) |
 | Upload rules (GEN-08) | `POST /api/uploads` with a GIF, or a file over 5 MB | 400 / 413 |
 | Forged payment webhook | `POST /api/payments/webhook` without a Stripe signature | 400 |
 
