@@ -5,16 +5,23 @@ import { BookingDetails } from "./details";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ payment?: string; redirect_status?: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, { payment, redirect_status: redirectStatus }] =
+    await Promise.all([params, searchParams]);
   if (!isFlightId(id)) notFound();
   return (
     <main>
       <Link href="/flights/bookings">My flight bookings</Link>
       <h1>Booking details</h1>
-      <BookingDetails id={id} />
+      <BookingDetails
+        id={id}
+        paymentReturn={payment === "return"}
+        redirectStatus={redirectStatus}
+      />
     </main>
   );
 }

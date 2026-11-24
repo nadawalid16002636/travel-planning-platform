@@ -1,14 +1,12 @@
+@scope (.flight-theme) {
 * {
   box-sizing: border-box;
 }
-:root {
+:scope {
   color-scheme: light;
   font-family: system-ui, sans-serif;
   color: #14263a;
   background: #f3f7fb;
-}
-body {
-  margin: 0;
 }
 header {
   background: #102e48;
@@ -245,4 +243,5 @@ legend {
 header nav {
   flex-wrap: wrap;
   gap: 0.75rem;
+}
 }

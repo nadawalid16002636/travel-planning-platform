@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
-const config: NextConfig = {
+const nextConfig: NextConfig = {
   agentRules: false,
+  turbopack: {
+    rules: {
+      "*.css": {
+        loaders: ["@tailwindcss/turbopack"],
+        as: "*.css",
+      },
+    },
+  },
   async rewrites() {
     const backend = (
       process.env.BACKEND_API_URL || "http://localhost:3000/api"
@@ -17,4 +25,5 @@ const config: NextConfig = {
     }));
   },
 };
-export default config;
+
+export default nextConfig;

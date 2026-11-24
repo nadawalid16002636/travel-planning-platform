@@ -20,6 +20,22 @@ npm run start:dev
 
 `backend/.npmrc` sets `legacy-peer-deps=true`, so a plain `npm install` works.
 
+## Frontend (Milestone 2)
+
+The Next.js app is in `frontend/`. Start the backend first, then configure the
+public API URL and Stripe test publishable key:
+
+```bash
+cd frontend
+npm ci
+cp .env.example .env.local
+npm run dev -- --port 3001
+```
+
+The backend's `FRONTEND_URL` should be `http://localhost:3001` for cookie-based
+sessions. Never put Stripe secret keys or database credentials in frontend
+configuration. See [frontend setup and P3 routes](frontend/README.md).
+
 ### Environment variables (`backend/.env`)
 
 | Variable | What it is |
@@ -51,6 +67,7 @@ the command prints the account list.
 ## Project structure
 
 ```
+frontend/src/app/  Next.js App Router — P3 hotel traveler journeys
 backend/src/
 ├── common/          shared code — only the team lead edits it
 │   ├── roles.ts                 Role enum, JwtUser type

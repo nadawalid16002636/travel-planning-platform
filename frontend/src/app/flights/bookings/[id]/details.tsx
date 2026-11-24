@@ -16,31 +16,43 @@ import { Payment } from "./payment";
 
 type Quote = { refundDueMinor: number; currency: string };
 
-export function BookingDetails({ id }: { id: string }) {
+export function BookingDetails({
+  id,
+  paymentReturn,
+  redirectStatus,
+}: {
+  id: string;
+  paymentReturn: boolean;
+  redirectStatus?: string;
+}) {
   const path = "flight-bookings/" + id;
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    paymentReturn && redirectStatus === "failed"
+      ? "The payment could not be completed. You can retry while the hold is active."
+      : "",
+  );
   const [unauthorized, setUnauthorized] = useState(false);
   const [attempt, retry] = useState(0);
-  const [verifying, setVerifying] = useState(false);
+  const [verifying, setVerifying] = useState(
+    paymentReturn && redirectStatus !== "failed",
+  );
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const pending = booking?.status === "pending-payment";
+  const confirmed = booking?.status === "confirmed";
   const remaining = useRemaining(
     pending ? booking.paymentExpiresAt : undefined,
   );
+  const departureRemaining = useRemaining(
+    confirmed ? booking.legs[0]?.departureAt : undefined,
+  );
 
   useEffect(() => {
+    if (!paymentReturn) return;
     const url = new URL(window.location.href);
-    if (!url.searchParams.has("payment")) return;
-    const redirected = url.searchParams.get("redirect_status");
     window.history.replaceState(window.history.state, "", url.pathname);
-    if (redirected === "failed")
-      setError(
-        "The payment could not be completed. You can retry while the hold is active.",
-      );
-    else setVerifying(true);
-  }, []);
+  }, [paymentReturn]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,9 +127,8 @@ export function BookingDetails({ id }: { id: string }) {
     }
   }
 
-  const confirmed = booking?.status === "confirmed";
   const canCancel =
-    confirmed && Date.parse(booking.legs[0].departureAt) > Date.now();
+    confirmed && departureRemaining !== null && departureRemaining > 0;
   return (
     <>
       {error && (
