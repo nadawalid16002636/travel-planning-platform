@@ -1,0 +1,247 @@
+@scope (.flight-theme) {
+* {
+  box-sizing: border-box;
+}
+:scope {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  color: #14263a;
+  background: #f3f7fb;
+}
+header {
+  background: #102e48;
+  color: white;
+}
+header nav {
+  max-width: 68rem;
+  margin: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+header a {
+  color: inherit;
+}
+header a:first-child {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+a {
+  color: #005b79;
+  font-weight: 650;
+  text-underline-offset: 0.18em;
+}
+main {
+  max-width: 68rem;
+  margin: auto;
+  padding: 2rem 1.5rem 4rem;
+}
+.intro {
+  margin: 1rem 0 2rem;
+}
+h1 {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 0 0 1rem;
+}
+h2,
+h3,
+p {
+  margin: 0 0 0.65rem;
+}
+p,
+li {
+  line-height: 1.55;
+}
+small {
+  color: #435b71;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: 0.4rem;
+}
+.panel {
+  padding: clamp(1rem, 3vw, 1.75rem);
+  background: white;
+  border: 1px solid #d6e0eb;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1rem;
+}
+label {
+  font-size: 0.95rem;
+  font-weight: 650;
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+input,
+select,
+button {
+  font: inherit;
+  min-height: 2.85rem;
+  border-radius: 0.55rem;
+}
+input,
+select {
+  min-width: 0;
+  width: 100%;
+  padding: 0.55rem;
+  border: 1px solid #8ca3b6;
+  background: white;
+  color: inherit;
+}
+button {
+  padding: 0.65rem 1.2rem;
+  border: 0;
+  background: #005b79;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+details {
+  margin: 1.2rem 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+details .fields {
+  margin-top: 1rem;
+}
+.results {
+  margin: 2rem 0;
+}
+.offer,
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.offer p:last-child {
+  margin-bottom: 0;
+}
+.selected {
+  border: 2px solid #005b79;
+}
+.cabin {
+  text-transform: capitalize;
+}
+.error {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: #fff0ee;
+  color: #8a2019;
+}
+:focus-visible {
+  outline: 3px solid #c25a00;
+  outline-offset: 3px;
+}
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+.stack > * {
+  margin-block: 0;
+}
+.stack > button,
+.stack > .button {
+  justify-self: start;
+}
+.narrow {
+  max-width: 30rem;
+}
+.actions,
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.tabs {
+  margin: 1.5rem 0;
+}
+.tabs a {
+  text-transform: capitalize;
+  background: white;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.55rem;
+}
+.tabs a[aria-current] {
+  color: white;
+  background: #102e48;
+  text-decoration: none;
+}
+.button {
+  display: inline-block;
+  background: #005b79;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.55rem;
+  text-decoration: none;
+}
+.danger {
+  background: #9a2927;
+}
+.secondary {
+  background: #e6edf5;
+  color: #14263a;
+}
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.check input {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  min-height: 0;
+}
+.status {
+  text-transform: capitalize;
+  font-weight: 650;
+}
+.amounts {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  max-width: 24rem;
+}
+.amounts dd {
+  margin: 0;
+  text-align: right;
+}
+.itinerary {
+  padding-inline-start: 1.25rem;
+}
+.itinerary li {
+  margin-block: 0.6rem;
+}
+.timer {
+  background: #e2f1fa;
+  padding: 0.75rem 1rem;
+  border-radius: 0.55rem;
+}
+fieldset {
+  min-inline-size: 0;
+}
+legend {
+  padding-inline: 0.4rem;
+  font-weight: 700;
+}
+header nav {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+}

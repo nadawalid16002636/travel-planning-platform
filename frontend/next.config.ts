@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  agentRules: false,
   turbopack: {
     rules: {
       "*.css": {
@@ -11,6 +9,20 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  async rewrites() {
+    const backend = (
+      process.env.BACKEND_API_URL || "http://localhost:3000/api"
+    ).replace(/\/$/, "");
+    return [
+      "auth/login",
+      "flight-bookings/:path*",
+      "payments",
+      "payments/:id/retry",
+    ].map((path) => ({
+      source: "/travel-api/" + path,
+      destination: backend + "/" + path,
+    }));
   },
 };
 

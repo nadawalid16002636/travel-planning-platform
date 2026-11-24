@@ -125,11 +125,13 @@ function SiteHeader() {
           <Link href="/hotels">
             Find a stay
           </Link>
+          <Link href="/flights">Find a flight</Link>
           {user && (
             <Link href="/my-reservations">
               My reservations
             </Link>
           )}
+          {user && <Link href="/flights/bookings">My flight bookings</Link>}
         </nav>
         <div className="header-actions">
           {loading ? (
@@ -160,9 +162,11 @@ function SiteHeader() {
       {menuOpen && (
         <nav className="mobile-nav" aria-label="Mobile navigation">
           <Link href="/hotels" onClick={() => setMenuOpen(false)}>Find a stay</Link>
+          <Link href="/flights" onClick={() => setMenuOpen(false)}>Find a flight</Link>
           {user ? (
             <>
               <Link href="/my-reservations" onClick={() => setMenuOpen(false)}>My reservations</Link>
+              <Link href="/flights/bookings" onClick={() => setMenuOpen(false)}>My flight bookings</Link>
               <button onClick={handleSignOut}>Sign out</button>
             </>
           ) : (
