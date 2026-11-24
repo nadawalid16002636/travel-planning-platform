@@ -231,11 +231,23 @@ export class PaymentsService {
   }
 
   private async applyIntentEvent(event: GatewayEvent): Promise<void> {
-    const intent = event.intent;
+    const intent = await this.stripe.retrievePaymentIntent(event.intent.id);
     const type = intent.metadata.bookingType as BookingType | undefined;
     const bookingId = intent.metadata.bookingId;
     if ((type !== 'flight' && type !== 'hotel') || !bookingId) return;
     const payment = await this.payments.findOne({ stripePaymentIntentId: intent.id }).exec();
+    if (!payment) throw new ConflictException('PaymentIntent is not registered');
+    if (payment.bookingType !== type || payment.bookingId !== bookingId ||
+        payment.userId !== intent.metadata.userId || payment.amount !== intent.amount ||
+        payment.currency.toLowerCase() !== intent.currency.toLowerCase()) {
+      throw new ConflictException('Stripe PaymentIntent does not match the registered payment');
+    }
+    // A delayed failure event must never undo a subsequently successful payment.
+    if (intent.status === 'succeeded') event = { ...event, type: 'payment_intent.succeeded' };
+    else if (intent.status === 'canceled') event = { ...event, type: 'payment_intent.canceled' };
+    else if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.canceled') {
+      throw new ConflictException('Stripe PaymentIntent outcome is not verified');
+    }
     if (event.type === 'payment_intent.succeeded') {
       await this.mark(intent.id, 'succeeded');
       if (type === 'flight') {
@@ -343,7 +355,7 @@ export class PaymentsService {
           await this.notifications.notify(String(event.userId), FLIGHT_EVENTS[event.kind] ?? event.kind, {
             bookingId: event.bookingId ? String(event.bookingId) : undefined,
             ...payload,
-          });
+          }, String(event._id));
         }
         await this.bookings.acknowledgeEvent(String(event._id));
       } catch (error) {

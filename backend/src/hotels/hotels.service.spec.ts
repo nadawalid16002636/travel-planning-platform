@@ -75,4 +75,84 @@ describe('HotelsService', () => {
       },
     ]);
   });
+
+  it('filters occupied rooms while returning free rooms regardless of individual capacity', async () => {
+    const checkIn = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const checkOut = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const checkInAt = new Date(`${checkIn}T00:00:00.000Z`);
+    const checkOutAt = new Date(`${checkOut}T00:00:00.000Z`);
+    const rooms = [
+      {
+        _id: 'small-free-room',
+        name: 'Twin',
+        maxOccupancy: 2,
+        pricePerNight: 12000,
+        availabilityRanges: [{ startDate: checkIn, endDate: checkOut }],
+        blockedDates: [],
+        reservations: [],
+        toObject() {
+          return {
+            _id: this._id,
+            name: this.name,
+            maxOccupancy: this.maxOccupancy,
+            pricePerNight: this.pricePerNight,
+            reservations: this.reservations,
+          };
+        },
+      },
+      {
+        _id: 'occupied-room',
+        name: 'Family',
+        maxOccupancy: 5,
+        pricePerNight: 18000,
+        availabilityRanges: [{ startDate: checkIn, endDate: checkOut }],
+        blockedDates: [],
+        reservations: [
+          {
+            checkIn: checkInAt,
+            checkOut: checkOutAt,
+            status: 'confirmed',
+            expiresAt: new Date(),
+          },
+        ],
+        toObject() {
+          return {
+            _id: this._id,
+            name: this.name,
+            maxOccupancy: this.maxOccupancy,
+            pricePerNight: this.pricePerNight,
+            reservations: this.reservations,
+          };
+        },
+      },
+    ];
+    hotelModel.findById.mockReturnValue({
+      exec: vi.fn().mockResolvedValue({ status: 'active' }),
+    });
+    const findQuery = { exec: vi.fn().mockResolvedValue(rooms) };
+    roomModel.find.mockReturnValue(findQuery);
+
+    const result = await service.getAvailableRooms(
+      '507f1f77bcf86cd799439011',
+      checkIn,
+      checkOut,
+    );
+
+    expect(roomModel.find).toHaveBeenCalledWith({
+      hotelId: '507f1f77bcf86cd799439011',
+      isActive: true,
+    });
+    expect(findQuery.exec).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      _id: 'small-free-room',
+      maxOccupancy: 2,
+      totalStayPrice: 24000,
+    });
+    expect(result[0]).not.toHaveProperty('reservations');
+  });
 });

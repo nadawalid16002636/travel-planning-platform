@@ -10,7 +10,6 @@ import {
   Query,
   Req,
   UseGuards,
-  UseFilters,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
@@ -35,16 +34,15 @@ import {
   UpdateFlightDto,
 } from './dto.js';
 import { FlightsService } from './flights.service.js';
-import { P2ErrorFilter } from './errors.js';
 
 @ApiTags('Airports')
-@UseFilters(P2ErrorFilter)
 @ApiResponse({ status: 400, description: 'Invalid airport query' })
 @Public()
 @Controller('airports')
 export class AirportsController {
   constructor(private readonly airports: AirportsService) {}
   @Get(':code')
+  @ApiOperation({ summary: 'FLT-02, GEN-12: one airport by IATA code' })
   byCode(@Param('code') code: string) { return this.airports.byCode(code); }
   @Get()
   @ApiOperation({ summary: 'FLT-02: Look up official airport reference data' })
@@ -53,7 +51,6 @@ export class AirportsController {
   }
 }
 @ApiTags('Flights')
-@UseFilters(P2ErrorFilter)
 @ApiResponse({ status: 400, description: 'Invalid input' })
 @ApiResponse({
   status: 401,
@@ -167,7 +164,6 @@ export class FlightsController {
 @ApiTags('Flight bookings')
 @ApiCookieAuth()
 @UseGuards(P2Access)
-@UseFilters(P2ErrorFilter)
 @ApiResponse({ status: 400, description: 'Invalid booking input' })
 @ApiResponse({
   status: 401,

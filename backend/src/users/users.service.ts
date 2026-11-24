@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, QueryFilter } from 'mongoose';
+import { Model, QueryFilter, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { Role } from '../common/roles.js';
 import { AccountStatus, User, UserDocument } from './schemas/user.schema.js';
@@ -11,6 +11,9 @@ import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ReferenceService } from '../reference/reference.service.js';
 
 const BCRYPT_ROUNDS = 12;
+
+/** ACC-12: how comments and reviews of deactivated users are shown. */
+export const DELETED_USER_NAME = 'Deleted user';
 
 /** Returns a reason string if deactivation must be blocked, or null. */
 export type DeactivationCheck = (userId: string) => Promise<string | null>;
@@ -149,14 +152,35 @@ export class UsersService implements OnApplicationBootstrap {
   }
 
   /** Name + email for lists that show who a record belongs to (e.g. ACC-17). */
-  async basicInfo(ids: string[]) {
+  /** `showDeactivated`: admin views (ACC-17) keep the real name; public pages show "Deleted user". */
+  async basicInfo(ids: string[], showDeactivated = false) {
     if (!ids.length) return [];
-    const docs = await this.userModel.find({ _id: { $in: ids } }).select('firstName lastName email').lean();
+    const docs = await this.userModel
+      .find({ _id: { $in: ids } })
+      .select('firstName lastName email status')
+      .lean();
     return docs.map((u) => ({
       id: String(u._id),
-      name: `${u.firstName} ${u.lastName}`.trim(),
+      // ACC-12: content written by a deactivated user is attributed to "Deleted user"
+      name:
+        u.status === AccountStatus.DEACTIVATED && !showDeactivated
+          ? DELETED_USER_NAME
+          : `${u.firstName} ${u.lastName}`.trim(),
       email: u.email,
     }));
+  }
+
+  /**
+   * ACC-12: ids of deactivated users. Public lists exclude their posts and public itineraries with
+   *   { authorId: { $nin: await users.deactivatedUserIds() } }
+   */
+  async deactivatedUserIds(): Promise<Types.ObjectId[]> {
+    return (await this.userModel.distinct('_id', { status: AccountStatus.DEACTIVATED })) as Types.ObjectId[];
+  }
+
+  async isDeactivated(id: string) {
+    if (!Types.ObjectId.isValid(id)) return false;
+    return !!(await this.userModel.exists({ _id: id, status: AccountStatus.DEACTIVATED }));
   }
 
   /** Moderators linked to a provider (ACC-15 notifications). */

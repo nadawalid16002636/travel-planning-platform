@@ -10,7 +10,7 @@ Requirements: Node.js 20+ and Git.
 git clone <repo-url>
 cd <repo>/backend
 npm install
-cp ../.env.example .env      # then paste the real values from the team lead
+cp .env.example .env         # then paste the real values from the team lead
 npm run start:dev
 ```
 
@@ -35,6 +35,34 @@ npm run dev -- --port 3001
 The backend's `FRONTEND_URL` should be `http://localhost:3001` for cookie-based
 sessions. Never put Stripe secret keys or database credentials in frontend
 configuration. See [frontend setup and P3 routes](frontend/README.md).
+
+### Environment variables (`backend/.env`)
+
+| Variable | What it is |
+| --- | --- |
+| `MONGODB_URI` | Shared Atlas database (ask the team lead for your database user) |
+| `JWT_SECRET`, `JWT_EXPIRES_IN` | Session tokens (any long random string locally) |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Seeded administrator, created on first start if no admin exists |
+| `SEED_ON_START` | Load the reference data (countries, cities, airports...) on every start |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe **test mode** keys; without them payments and bookings answer 503 |
+| `FXRATES_API_KEY` | FXRatesAPI key for itinerary budget conversion (backend only) |
+| `PLATFORM_CURRENCY`, `PORT`, `FRONTEND_URL`, `PUBLIC_BASE_URL`, `COOKIE_SECURE` | Defaults in `.env.example` work locally |
+
+## Demo and documentation
+
+| What | Where |
+| --- | --- |
+| Step-by-step Swagger demo of every role (guest, admin, moderators, travelers, blog, itineraries) | [docs/qa/SWAGGER_WALKTHROUGH.md](docs/qa/SWAGGER_WALKTHROUGH.md) |
+| Permission and validation test results, bugs found and their status | [docs/qa/PERMISSION_TESTS.md](docs/qa/PERMISSION_TESTS.md) |
+| Ready-to-run request examples (every JSON body in Swagger) | `backend/src/docs/swagger-examples.ts` |
+| Official requirements | `docs/requirements/mandatory.csv`, `bonus.csv` |
+
+**Demo data:** `npm run seed:demo` (in `backend/`, after the API has started once) adds 3 airlines, 3 hotels with
+bookable rooms, a moderator for each, and traveler accounts. Every demo account uses the password `Demo@12345`;
+the command prints the account list.
+
+**Demo accounts in Swagger:** open `POST /api/auth/login` and pick an example (traveler, admin, moderator) from the
+**Examples** dropdown. The admin example uses the default `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env.example`.
 
 ## Project structure
 

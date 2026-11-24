@@ -158,3 +158,103 @@ hidden posts are visible only to the author and admins (GEN-10), one like per us
 - After adding a room, `POST /api/hotel-bookings` always returns 409 "Room ... is unavailable for the selected dates". `POST .../availability` with
   `availabilityRanges` answers 400 "Provide dates to block or unblock", and `PATCH .../availability` answers 404 "Room not found" for the same room id.
   What's the intended way to make a new room bookable? If PATCH should find the room, it's a bug.
+
+## Run log 3: 15 Nov 2026, local in-memory DB, develop @ 7a4bc10 (after P4 merge)
+
+| # | Result | Notes |
+| --- | --- | --- |
+| Uploads: moderator → own hotel PNG | ✅ | 201, served publicly by URL |
+| Uploads: moderator → other hotel | ✅ | 403 |
+| Uploads: user → hotel photos | ✅ | 403 "Only the assigned hotel moderator can upload hotel photos" |
+| Uploads: text file renamed `.png`, GIF | ✅ | 400 "Only JPG and PNG images are accepted" (checks the real file bytes) |
+| Uploads: 6 MB file | ✅ | 413 "File too large" |
+| Uploads: 6th hotel image | ✅ | 400 "This hotel already has 5 images" (GEN-08) |
+| Uploads: user deletes someone else's file | ✅ | 403 |
+| Uploads: `../` path tricks on `/uploads/files/` | ✅ | 404 |
+| Payments: userB views / accepts policies / pays for userA's flight booking | ✅ | 403 "You do not own this booking" |
+| Flight booking: userB views userA's booking or e-ticket | ✅ | 403 |
+| Stripe webhook without signature | ✅ | 400 "Missing Stripe signature" (forged webhooks rejected) |
+| Reports: guest | ✅ | 401 |
+| Reports: moderator files a report | ✅ | 403 (only registered users report) |
+| Reports: user / moderator → admin report list or content delete | ✅ | 403 |
+| Reports: missing content, empty reason, unsupported type | ✅ | 404 / 400 / 400 |
+| Notifications: someone else's / unknown id | ✅ | 404 |
+| Payments: create a PaymentIntent | ⏳ | 503 "Stripe is not configured", needs a Stripe test key in `.env` |
+| Reports: once per item (GEN-09), admin resolve (GEN-10) | ⏳ | needs a post, comment, review or itinerary to exist (P5 / a completed hotel stay) |
+
+### Bugs found
+
+4. **Hotel rooms can't be found after they're created, so hotel booking is broken (HTL-03..HTL-15).** Steps: as admin, create a hotel and
+   `POST /api/hotels/{id}/rooms` → 201. Then `GET /api/hotels/{id}` shows `rooms: []`, `PATCH /api/hotels/{id}/rooms/{roomId}` and
+   `PATCH .../availability` → 404 "Room not found", and `POST /api/hotel-bookings` → 409 "unavailable".
+   **Cause (confirmed):** with `@nestjs/mongoose` 12 + Mongoose 9, `@Prop({ type: Types.ObjectId })` becomes a **Mixed** field, so a query like
+   `find({ hotelId: '<string id>' })` is no longer converted to an ObjectId and matches nothing. P2's code uses `SchemaTypes.ObjectId` and isn't affected.
+   **Fix:** replace `type: Types.ObjectId` with `type: SchemaTypes.ObjectId` (`import { SchemaTypes } from 'mongoose'`) in:
+   `hotels/entities/hotel-room.entity.ts` (2), `hotel-bookings/entities/hotel-booking.entity.ts` (3), `reviews/entities/review.entity.ts` (3),
+   `users/schemas/user.schema.ts` (1), `audit/schemas/audit-log.schema.ts` (1), `auth/schemas/session.schema.ts` (1).
+   Owners: P3 (hotels, bookings, reviews) and the lead (users, audit, sessions). `users.providerId` is also hit: `moderatorIdsFor()` queries it by
+   string, so it likely finds no moderators when an admin deactivates a provider.
+
+Follow-up: PR #21 corrected ObjectId casting for the hotel room schema on `develop`. The results above describe run 3 at its recorded commit.
+
+## Run log 4: 19 Nov 2026, local in-memory DB, develop @ 42bd367 (after P5 merge and the fix batch)
+
+### Earlier bugs re-checked
+
+| Bug | Status |
+| --- | --- |
+| 1. P2 error format | ✅ fixed: P2 routes now return `{ statusCode, message, path, timestamp }` |
+| 2. `GET /api/hotels` not paginated | ✅ fixed: returns `{ data, page, limit, total }` |
+| 3. `GET /api/flight-bookings` uses `items` | ✅ fixed: returns `data` |
+| 4. Hotel rooms not found (`Types.ObjectId` → Mixed) | ✅ fixed: the hotel shows its rooms, availability can be opened, available rooms are listed. Booking a room now reaches payment (503 until Stripe is configured locally) |
+
+### Blog (BLG) and itineraries (ITN)
+
+| # | Result | Notes |
+| --- | --- | --- |
+| BLG-01 | ✅ | publish and draft; empty title → 400 |
+| BLG-02 | ✅ | guest list and post page with title, author, date, body, tags, likes, comments; drafts → 404 for guests and other users |
+| BLG-03 | ✅ | `/posts/mine` lists drafts with like and comment counts |
+| BLG-04 | ✅ | other user editing or deleting a post (published or draft) → 403; author edit → 200 |
+| BLG-05 | ✅ | comment 201; empty, spaces only, 501 chars → 400; comment on a draft → 404 |
+| BLG-06 | ✅ | like twice → count stays 1; unlike → 0; like a draft → 404 |
+| BLG-07 | ✅ | other user editing or deleting a comment → 403; own edit → 200 |
+| BLG-08 | ✅ | 6 tags or a 31-character tag → 400; `?tag=` filter works |
+| BLG-09 | ✅ | search by title, tag and author name; drafts not found; "no results" message; ordered by likes + comments |
+| BLG-12 | ✅ | author page with name, join date, posts |
+| ACC-10 | ✅ | guest like, comment or create → 401 |
+| GEN-09 | ✅ | reporting the same post twice → 409 "You have already reported this" |
+| ITN privacy | ✅ | other user opening, editing, adding days or exporting a private itinerary → 403; private itinerary via the public route → 404 |
+| ITN clone | ✅ | public itinerary clones into the other user's private list; cloning a private one → 404 |
+| ITN reference data | ✅ | unknown city → 404 "Unknown city" |
+
+### Bugs found
+
+5. **Hidden content stays public (GEN-10: "Hidden content is visible only to its author and admins").** Admin resolves a report with
+   `{ action: 'hide' }` → 200, but the post is still returned to guests by `GET /api/posts/{id}` and listed in `GET /api/posts`.
+   Same for itineraries: `GET /api/itineraries/public/{id}` and `/api/itineraries/public` still show a hidden itinerary.
+   Cause: `reports.service` sets `hidden: true` on the document (and offers `visibility()`), but `posts.service` and `itineraries.service`
+   only filter on `status` / `visibility`, never on `hidden`. Owners: P5 (filter hidden content), with P4.
+6. **Comments can't be reported or moderated (GEN-09, GEN-10).** `POST /api/reports` with `targetType: 'comment'` and a real comment id
+   → 404 "Content not found"; `DELETE /api/admin/content/comment/{id}` → 404 too. Cause: comments are embedded inside posts
+   (`posts.comments`), but `reports.service` looks for them in a separate `comments` collection. Owners: P4 and P5.
+
+## Run log 5: final check, 20 Nov 2026, local in-memory DB, develop @ 5c5e797
+
+Ran the whole [Swagger walkthrough](SWAGGER_WALKTHROUGH.md), Parts 1 to 10 (about 90 requests, using the Swagger examples), on the final code.
+
+| Part | Result |
+| --- | --- |
+| 1. Guest | ✅ all steps |
+| 2. Admin setup (airline, policies, flight, hotel, room, availability, moderators) | ✅ all steps |
+| 3. Moderators (temporary password, own provider only) | ✅ all steps |
+| 4. Traveler books a flight | ✅ search finds the flight, hold, booking (pending payment), policies, acceptance, booking details, notifications. Payment → 503 without a local Stripe key (expected) |
+| 5. Traveler books a hotel | ✅ search, available rooms with total price. Booking → 503 without a local Stripe key (expected) |
+| 6. Privacy between users | ✅ another traveler gets 403 on the booking, e-ticket and payment; sees only an empty own list |
+| 7. Admin oversight | ✅ account search, bookings overview, suspend (login → 403), reactivate, password reset, hotel deactivate (hidden from search) and reactivate, audit log, reports |
+| 8. Security checks | ✅ account lock, no `role` injection, bad ids, forged webhook |
+| 9. Blog | ✅ all 18 steps |
+| 10. Itineraries | ✅ all 10 steps, including PDF export and clone |
+
+**Still open:** bug 5 (hidden posts and itineraries stay public) and bug 6 (comments can't be reported). Confirming a payment end to end
+was not tested locally (no Stripe test key); P7's Stripe test-mode e2e tests cover PAY-01 and PAY-03.

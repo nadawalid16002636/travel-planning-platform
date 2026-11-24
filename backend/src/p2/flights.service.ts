@@ -365,7 +365,7 @@ export class FlightsService {
       ];
       const [result] = await this.flights.aggregate(pipeline);
       return {
-        items: result.items,
+        data: result.items, // GEN-05 list shape { data, page, limit, total }
         total: result.count[0]?.total || 0,
         page: q.page,
         limit: q.limit,

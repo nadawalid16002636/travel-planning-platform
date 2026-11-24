@@ -3,6 +3,9 @@ import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Notification {
+  @Prop({ type: String })
+  sourceEventId?: string;
+
   @Prop({ required: true, index: true })
   userId: string;
 
@@ -25,3 +28,4 @@ export class Notification {
 export type NotificationDocument = HydratedDocument<Notification>;
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 NotificationSchema.index({ userId: 1, createdAt: -1 });
+NotificationSchema.index({ sourceEventId: 1 }, { unique: true, sparse: true });
