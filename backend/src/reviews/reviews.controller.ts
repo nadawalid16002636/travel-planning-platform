@@ -21,6 +21,16 @@ import { ReviewsService } from './reviews.service.js';
 export class ReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 
+  @Roles(Role.USER)
+  @Get('hotel-bookings/:bookingId/review')
+  @ApiErrors(400, 401, 403, [404, 'Hotel booking not found'])
+  findForBooking(
+    @Param('bookingId', ParseObjectIdPipe) bookingId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.reviews.findForBooking(bookingId, user);
+  }
+
   @Public()
   @Get('hotels/:hotelId/reviews')
   @ApiErrors(400, [404, 'Hotel not found'])

@@ -79,6 +79,19 @@ export class ReviewsService {
     }
   }
 
+  async findForBooking(bookingId: string, user: JwtUser) {
+    this.validateId(bookingId);
+    const booking = await this.bookingModel.findById(bookingId).exec();
+    if (!booking) throw new NotFoundException('Hotel booking not found');
+    assertOwner(booking.userId, user);
+    return this.reviewModel
+      .findOne({
+        bookingId: booking._id,
+        userId: booking.userId,
+      })
+      .exec();
+  }
+
   async findForHotel(hotelId: string, query: ReviewQueryDto, viewer?: JwtUser) {
     this.validateId(hotelId);
     const hotel = await this.hotelModel.findById(hotelId).exec();

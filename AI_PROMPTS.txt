@@ -196,4 +196,23 @@ Implemented the P4 modules on top of origin/develop: Stripe PaymentIntents and r
 the webhook, policy acceptance, the flight outbox worker, notification storage, image
 upload limits, and report moderation. Wired hotel cancellation to an in-app notification
 and hid moderated reviews from the public hotel review list.
+=================================================
+
+=================================================
+Date: 2026-11-24
+Student: Habiba (P3)
+Tool: Copilot SDK in VS Code
+Related Requirement: HTL-02, HTL-11, HTL-12, HTL-15, HTL-16, HTL-17, HTL-18,
+HTL-20, HTL-21, HTL-23, HTL-24, PAY-01, PAY-02
+Prompt summary:
+Set up the missing Next.js frontend and implement the P3 hotel traveler journey:
+hotel search and filters, details and rooms, multiple-room booking and guest
+assignment, policy acceptance, Stripe checkout, reservation groups/details,
+cancellation and refund preview, and review create/edit/delete. Use the existing
+backend contracts, keep credentials out of the frontend, and verify the app.
+How the output was used:
+Scaffolded the Next.js App Router frontend, connected hotel and account flows to
+the existing API, and added a reservation-scoped review lookup so a traveler can
+reliably find their own review for editing. This entry documents AI-assisted work;
+the student must review the implementation and local test results before merging.
 ================================================
