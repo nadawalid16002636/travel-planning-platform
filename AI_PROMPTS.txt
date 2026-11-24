@@ -393,3 +393,31 @@ each fix, confirmed no real AI log entry was lost, ran the type-check and all te
 found and fixed two moderation bugs: comments could not be reported (GEN-09) and hidden posts, comments and
 itineraries were still shown publicly (GEN-10); new tests cover both.
 =========================================================================================
+
+================================================
+Date: 2026-11-24
+Student: Nada Walid (P2)
+Tool: ChatGPT
+Related Requirement: FLT-11, FLT-12, FLT-15, FLT-17
+Prompt:
+start with these this is the second part of the project for me
+this is the description
+start with it now
+How the output was used:
+Read the updated project description and started the Next.js traveler flight
+frontend with search, results, and flight details wired to the NestJS API.
+================================================
+
+================================================
+Date: 2026-11-24
+Student: Nada Walid (P2)
+Tool: ChatGPT
+Related Requirement: FLT-19, FLT-21, FLT-22, FLT-23, FLT-25, FLT-26, PAY-01, PAY-02
+Prompt:
+finish the rest
+How the output was used:
+Completed the traveler booking UI, with hold countdown, passenger and baggage
+forms, policy acceptance, Stripe Elements, booking history, refund preview,
+cancellation, and PDF download. Verified the browser flow with a local fixture
+and ran the P2 and payments backend test suites.
+================================================
